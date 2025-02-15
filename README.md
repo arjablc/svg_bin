@@ -11,19 +11,38 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+# SVG_BIN
+A helper flutter pacakge that converts your `.svg` files to binary with the extension `.vec` using `vector_graphics_compiler` and provides a widget to render those .vec files using `vector_graphics` package.
+[vector_graphics_compiler](pub.dev/packages/vector_graphics_compiler)
+[vector_graphics](https://pub.dev/packages/vector_graphics)
 
 ## Features
+- [ ] generate .vec files
+- [ ] generate  asset class
+- [ ] add args parser to toggle category modes
+- [ ] add args parser to change assets directory (input) and assets class directory(output)
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+- Install the package using following command inside your flutter project.
+
+``` bash
+flutter pub add svg_bin
+```
+
+- Generate the vec files using the following command
+``` bash
+dart run svg_bin
+```
+
+- Render the .vec with the `SvgBin()` widget
+
 
 ## Usage
+
+<!--TODO: add usages-->
 
 TODO: Include short and useful examples for package users. Add longer examples
 to `/example` folder.
@@ -34,6 +53,6 @@ const like = 'sample';
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+I am a beginner so help me out here.
+Very special thanks to [Avishek Subedi](https://github.com/Avishek-Subedi) dai.
+
