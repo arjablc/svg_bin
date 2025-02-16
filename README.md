@@ -20,9 +20,9 @@ A helper flutter pacakge that converts your `.svg` files to binary with the exte
 
 ## Features
 - [x] generate .vec files
-- [ ] generate  asset class
-    - [ ] folder asset class 
-    - [ ] category class
+- [x] generate  asset class
+    - [x] folder asset class 
+    - [x] category class
 - [ ] add args parser to toggle category modes
 - [ ] add args parser to change assets directory (input) and assets class directory(output)
 
@@ -46,13 +46,30 @@ dart run svg_bin
 
 ## Usage
 
-<!--TODO: add usages-->
+**Currently this supports only one input direcotry which will be `/assets` in your flutter root.**
+- Rename your assets to be in the following format:
+```
+assets/subfolder/category_name-asset_name.svg
+```
+- This will generate the main asset class, the sub folder class and the category name class, with String getters that will have the actual path of the asset.
+- Make sure you have imported the bin folders into the `pubspec.yml` of your flutter project. (Don't want to mess with yml just yet).
+- Then just do `dart run svg_bin` at root of your flutter project.
+- To use the `.vec` assets use the `SvgBin()` widget
+- **For the love of god** don't make your category or folder name same as some of the inbuilt classes in Dart and Flutter.
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
+for a asset like 
+```
+assets/icons/finance-money.svg
+```
+after running the command
 ```dart
-const like = 'sample';
+SvgBin(
+    AppAsset.icons.finance.money,
+    height: 100,
+    width: 100,
+    
+
+)
 ```
 
 ## Additional information
