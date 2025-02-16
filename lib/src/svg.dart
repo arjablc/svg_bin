@@ -1,8 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
-class SvgBinary extends StatelessWidget {
-  const SvgBinary(
+class SvgBin extends StatelessWidget {
+  const SvgBin(
     this.assetName, {
     required this.height,
     required this.width,
