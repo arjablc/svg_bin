@@ -124,9 +124,8 @@ Future<void> generate() async {
       .writeAsString(fileBuffer.toString());
 }
 
-StringBuffer generateAllGetter(Map<String, Map<String,String>> map ){
-	return StringBuffer();
-
+StringBuffer generateAllGetter(Map<String, Map<String, String>> map) {
+  return StringBuffer();
 }
 
 StringBuffer addCategoryClassBuffer(Map<String, String> map) {
@@ -156,10 +155,24 @@ StringBuffer addCategoryClassBuffer(Map<String, String> map) {
                     if (currenCatName != categoryName) return '';
                     final assetName = assetCatSplit.first.split('-').last;
                     final assetNameCamel = Utils.snakeToCamelCase(assetName);
-                    return "String get $assetNameCamel => '${e.value}'; $lineTerm";
+                    return "static const String $assetNameCamel = '${e.value}'; $lineTerm";
                   },
                 ),
               )
+              ..writeln('final List<String> all = const [')
+              ..writeAll(
+                map.entries.map(
+                  (e) {
+                    final assetCatSplit = e.key.split('.');
+                    final currenCatName = assetCatSplit.first.split('-').first;
+                    if (currenCatName != categoryName) return '';
+                    final assetName = assetCatSplit.first.split('-').last;
+                    final assetNameCamel = Utils.snakeToCamelCase(assetName);
+                    return ' $assetNameCamel ,';
+                  },
+                ),
+              )
+              ..writeln('];')
               ..writeln('}');
           }
           return '';

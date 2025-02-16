@@ -11,10 +11,12 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
+
 # SVG_BIN
 A helper flutter pacakge that converts your `.svg` files to binary with the extension `.vec` using `vector_graphics_compiler` and provides a widget to render those .vec files using `vector_graphics` package.
-[vector_graphics_compiler](pub.dev/packages/vector_graphics_compiler)
-[vector_graphics](https://pub.dev/packages/vector_graphics)
+- [vector_graphics_compiler](pub.dev/packages/vector_graphics_compiler)
+- [vector_graphics](https://pub.dev/packages/vector_graphics)
+### Note: **Under Construction**
 
 ## Features
 - [x] generate .vec files
