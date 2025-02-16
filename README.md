@@ -40,7 +40,7 @@ flutter pub add svg_bin
 ``` bash
 dart run svg_bin
 ```
-
+- The `AppAsset` class is generated inside `/lib/src/core/app_assets/assets.dart` (adding custom path is on the agenda)
 - Render the .vec with the `SvgBin()` widget
 
 
@@ -65,15 +65,10 @@ after running the command
 ```dart
 SvgBin(
     AppAsset.icons.finance.money,
-    height: 100,
-    width: 100,
-    
-
 )
 ```
 
 ## Additional information
 
-I am a beginner so help me out here.
 Very special thanks to [Avishek Subedi](https://github.com/Avishek-Subedi) dai.
 
