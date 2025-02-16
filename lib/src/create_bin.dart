@@ -54,16 +54,17 @@ Future<void> generate() async {
 
     currentFolderFileMap[fileBase] = 'assets/$folderBase/$binFileBase';
 
+    print(path.join(binFolderPath, binFileBase));
+
     //INFO: Now comes the part where you conver the svgs into vec files
     stdout.writeln("Converting $folderBase/$fileBase -> $binFileBase");
-
     // runs this is the home directory
     final result = await Process.run('dart', [
       'run',
       'vector_graphics_compiler',
-      '- i',
+      '-i',
       path.join(folderPath, fileBase),
-      '- o',
+      '-o',
       path.join(binFolderPath, binFileBase),
     ]);
     stderr.write(result.stderr);
@@ -88,13 +89,15 @@ Future<void> generate() async {
                 (e) {
                   final assetName = e.key.split('.').first;
                   final containsCat = assetName.contains('-');
+                  final assetNameCamel = Utils.snakeToCamelCase(assetName);
                   if (!containsCat) {
-                    return "String get $assetName => '${e.value}'; $lineTerm";
+                    return "String get $assetNameCamel => '${e.value}'; $lineTerm";
                   }
                   return '';
                 },
               ),
             )
+            // category instance names
             ..writeAll(folderFileMap[folder]!.entries.map((e) {
               final lineTerm = Platform.lineTerminator;
               final assetName = e.key.split('.').first;
@@ -103,7 +106,7 @@ Future<void> generate() async {
               if (catCache.containsKey(assetCategory)) {
                 return '';
               } else {
-                catCache[assetCategory] = 'hello';
+                catCache[assetCategory] = 'idk_what_i_am_doing';
                 final assetCatPascal = Utils.snakeTOPascalCase(assetCategory);
                 final assetCatCamel = Utils.snakeToCamelCase(assetCategory);
 
@@ -115,7 +118,8 @@ Future<void> generate() async {
           return folderClassBuff;
         },
       ),
-    );
+    )
+    ..write(addCategoryClassBuffer(folderFileMap));
 
   await File(path.join(
           cwd.path, 'lib', 'src', 'core', 'app_assets', 'assets.dart'))
@@ -126,25 +130,25 @@ StringBuffer addCategoryClassBuffer(Map<String, Map<String, String>> map) {
   final lineTerm = Platform.lineTerminator;
   return StringBuffer()
     ..writeAll(
-      map.entries.map(
-        (e) {
+      map.keys.map(
+        (folder) {
           final assetNameWithCategory =
-              Utils.kebabToPascalCase(e.key.split('.').first);
+              Utils.kebabToPascalCase(folder.split('.').first);
           if (!assetNameWithCategory.contains('-')) return '';
           final split = assetNameWithCategory.split('-');
           final assetCategory = split.first;
           final assetName = split[1];
+          final assetNameCamel = Utils.snakeToCamelCase(assetName);
           final assetCatPascal = Utils.snakeTOPascalCase(assetCategory);
-          final categoryBuff = StringBuffer()
-            ..writeln('final class $assetCatPascal { ')
+          return StringBuffer()
+            ..writeln('final class  assetCatPascal { ')
             ..writeAll(
-              map.entries.map(
+              map[folder]!.entries.map(
                 (e) {
-                  return "String get $assetName => '${e.value}'; $lineTerm";
+                  return "String get  assetNameCamel => '${e.value}'; $lineTerm";
                 },
               ),
             );
-          return categoryBuff;
         },
       ),
     );
@@ -156,8 +160,9 @@ StringBuffer addAssetClassBuffer(Map<String, Map<String, String>> map) {
     ..write('final class AppAsset {')
     ..writeAll(map.keys.map((key) {
       final className = Utils.kebabToPascalCase(key);
+      final classInstanceName = Utils.kebabToCamelCase(key);
       //INFO: static const className = ClassName();
-      return '\t static const asset$className = Asset$className() ; $lineTerm';
+      return '\t static const $classInstanceName = $className() ; $lineTerm';
     }))
     ..writeln()
     ..writeln('}');

@@ -17,8 +17,10 @@ A helper flutter pacakge that converts your `.svg` files to binary with the exte
 [vector_graphics](https://pub.dev/packages/vector_graphics)
 
 ## Features
-- [ ] generate .vec files
+- [x] generate .vec files
 - [ ] generate  asset class
+    - [ ] folder asset class 
+    - [ ] category class
 - [ ] add args parser to toggle category modes
 - [ ] add args parser to change assets directory (input) and assets class directory(output)
 
