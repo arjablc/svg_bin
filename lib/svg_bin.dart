@@ -1,1 +1,1 @@
-export 'svg.dart' show SvgBin;
+export 'src/svg.dart';

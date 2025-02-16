@@ -3,10 +3,6 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:svg_bin/src/utils.dart';
 
-//Future<void> main() async {
-//  await generate();
-//}
-
 Future<void> generate() async {
   final cwd = Directory.current;
   final assetFolder = 'assets';
@@ -52,7 +48,7 @@ Future<void> generate() async {
     final currentFolderFileMap =
         folderFileMap.putIfAbsent(folderBase, () => {});
 
-    currentFolderFileMap[fileBase] = 'assets/$folderBase/$binFileBase';
+    currentFolderFileMap[fileBase] = 'assets/$folderBase-bin/$binFileBase';
 
     //INFO: Now comes the part where you conver the svgs into vec files
     stdout.writeln("Converting $folderBase/$fileBase -> $binFileBase");

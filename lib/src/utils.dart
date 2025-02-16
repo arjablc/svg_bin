@@ -1,17 +1,3 @@
-void main() {
-  final snake = 'hello_world';
-  final kebab = 'hello-world';
-  final snake2 = 'Mawa';
-  final snake3 = 'mawa';
-
-  print(Utils.snakeToCamelCase(snake));
-  print(Utils.snakeTOPascalCase(snake));
-  print(Utils.kebabToPascalCase(kebab));
-  print(Utils.kebabToCamelCase(kebab));
-  print(Utils.snakeToCamelCase(snake2));
-  print(Utils.snakeToCamelCase(snake3));
-}
-
 class Utils {
   static String kebabToPascalCase(String input) {
     return kebabToCamelCase(input).replaceFirstMapped(

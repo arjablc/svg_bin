@@ -1,20 +1,19 @@
-
 import 'package:flutter/material.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
 class SvgBin extends StatelessWidget {
   const SvgBin(
     this.assetName, {
-    required this.height,
-    required this.width,
+    this.height,
+    this.width,
     this.errorColor,
     this.fit,
     super.key,
   });
 
   final String assetName;
-  final double height;
-  final double width;
+  final double? height;
+  final double? width;
   final BoxFit? fit;
   final Color? errorColor;
 
