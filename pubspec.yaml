@@ -1,6 +1,6 @@
 name: svg_bin
 description: "A flutter pacakge that compiles your svg to vec and helps display vec"
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/arjablc/svg_bin
 homepage:
 
