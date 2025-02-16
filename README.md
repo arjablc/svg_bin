@@ -65,15 +65,10 @@ after running the command
 ```dart
 SvgBin(
     AppAsset.icons.finance.money,
-    height: 100,
-    width: 100,
-    
-
 )
 ```
 
 ## Additional information
 
-I am a beginner so help me out here.
 Very special thanks to [Avishek Subedi](https://github.com/Avishek-Subedi) dai.
 
