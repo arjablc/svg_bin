@@ -104,11 +104,11 @@ Future<void> generate() async {
               if (catCache.containsKey(assetCategory)) {
                 return '';
               } else {
-                catCache[assetCategory] = 'idk_what__am_doing';
+                catCache[assetCategory] = 'idk_what_i_am_doing';
                 final assetCatPascal = Utils.snakeTOPascalCase(assetCategory);
                 final assetCatCamel = Utils.snakeToCamelCase(assetCategory);
 
-                return 'static const $assetCatCamel = $assetCatPascal ( ); $lineTerm';
+                return 'final $assetCatCamel = const $assetCatPascal ( ); $lineTerm';
               }
             }))
             ..writeln('}')
@@ -122,6 +122,11 @@ Future<void> generate() async {
   await File(path.join(
           cwd.path, 'lib', 'src', 'core', 'app_assets', 'assets.dart'))
       .writeAsString(fileBuffer.toString());
+}
+
+StringBuffer generateAllGetter(Map<String, Map<String,String>> map ){
+	return StringBuffer();
+
 }
 
 StringBuffer addCategoryClassBuffer(Map<String, String> map) {
