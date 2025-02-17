@@ -3,11 +3,25 @@ import 'package:vector_graphics/vector_graphics.dart';
 
 class SvgBin extends StatelessWidget {
   const SvgBin(
+    /// The path to the .vec file
+    /// Preferably with the help of generated
+    /// [AppAsset] class
     this.assetName, {
+    /// height of the svg,
+    /// takes parent's height if null
     this.height,
+
+    /// width of the svg,
+    /// takes parent's width if null
     this.width,
+
+    /// For there is an error while
+    /// loading the .vec file
     this.errorColor,
+
+    /// Defaults to [BoxFit.contain] if null
     this.fit,
+
     /// [ColorFilter] for the svg
     this.colorFilter,
     super.key,
