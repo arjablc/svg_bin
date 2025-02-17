@@ -8,6 +8,8 @@ class SvgBin extends StatelessWidget {
     this.width,
     this.errorColor,
     this.fit,
+    /// [ColorFilter] for the svg
+    this.colorFilter,
     super.key,
   });
 
@@ -16,12 +18,14 @@ class SvgBin extends StatelessWidget {
   final double? width;
   final BoxFit? fit;
   final Color? errorColor;
+  final ColorFilter? colorFilter;
 
   @override
   Widget build(BuildContext context) {
     return VectorGraphic(
       height: height,
       width: width,
+      colorFilter: colorFilter,
       fit: fit ?? BoxFit.scaleDown,
       placeholderBuilder: (context) {
         return SizedBox();
