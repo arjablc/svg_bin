@@ -104,7 +104,7 @@ Future<void> generate() async {
                 final assetCatPascal = Utils.snakeTOPascalCase(assetCategory);
                 final assetCatCamel = Utils.snakeToCamelCase(assetCategory);
 
-                return 'final $assetCatCamel = const $assetCatPascal ( ); $lineTerm';
+                return '$assetCatPascal get $assetCatCamel => $assetCatPascal.instance; $lineTerm';
               }
             }))
             ..writeln('}')
@@ -118,10 +118,6 @@ Future<void> generate() async {
   await File(path.join(
           cwd.path, 'lib', 'src', 'core', 'app_assets', 'assets.dart'))
       .writeAsString(fileBuffer.toString());
-}
-
-StringBuffer generateAllGetter(Map<String, Map<String, String>> map) {
-  return StringBuffer();
 }
 
 StringBuffer addCategoryClassBuffer(Map<String, String> map) {
@@ -142,7 +138,13 @@ StringBuffer addCategoryClassBuffer(Map<String, String> map) {
               ..writeln(
                   'final class ${Utils.snakeTOPascalCase(categoryName)} {')
               ..writeln(
-                  'const ${Utils.snakeTOPascalCase(categoryName)} (); $lineTerm')
+                  "${Utils.snakeTOPascalCase(categoryName)}._internal(); $lineTerm")
+              ..writeln(
+                  "static final ${Utils.snakeTOPascalCase(categoryName)} _instance = ${Utils.snakeTOPascalCase(categoryName)}._internal(); $lineTerm")
+              ..writeln(
+                  "static ${Utils.snakeTOPascalCase(categoryName)} get instance => _instance; $lineTerm")
+              //..writeln(
+              //    'const ${Utils.snakeTOPascalCase(categoryName)} (); $lineTerm')
               ..writeAll(
                 map.entries.map(
                   (e) {
@@ -151,7 +153,7 @@ StringBuffer addCategoryClassBuffer(Map<String, String> map) {
                     if (currenCatName != categoryName) return '';
                     final assetName = assetCatSplit.first.split('-').last;
                     final assetNameCamel = Utils.snakeToCamelCase(assetName);
-                    return "static const String $assetNameCamel = '${e.value}'; $lineTerm";
+                    return "String get $assetNameCamel => '${e.value}'; $lineTerm";
                   },
                 ),
               )
@@ -162,9 +164,9 @@ StringBuffer addCategoryClassBuffer(Map<String, String> map) {
                     final assetCatSplit = e.key.split('.');
                     final currenCatName = assetCatSplit.first.split('-').first;
                     if (currenCatName != categoryName) return '';
-                    final assetName = assetCatSplit.first.split('-').last;
-                    final assetNameCamel = Utils.snakeToCamelCase(assetName);
-                    return ' $assetNameCamel ,';
+                    //final assetName = assetCatSplit.first.split('-').last;
+                    //final assetNameCamel = Utils.snakeToCamelCase(assetName);
+                    return "'${e.value}',";
                   },
                 ),
               )
