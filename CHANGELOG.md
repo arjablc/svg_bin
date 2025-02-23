@@ -7,3 +7,7 @@ Initial version supports generating the vec files,
 Updated readme.
     - Specified the output dir and file
 
+
+## 0.1.210
+Bugfix: Fixed a bug where accessing properties of category class was not possible.
+Minor: Added feature for colorFilter for the SvgBin widget.
