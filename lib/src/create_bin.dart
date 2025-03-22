@@ -11,7 +11,8 @@ Future<void> generate() async {
   final assetPath = path.join(cwd.path, assetFolder);
 
   final assetDir = Directory(assetPath);
-  //checks if the assets folder is present or not
+
+  /// checks if the assets folder is present or not
   if (await assetDir.exists() == false) {
     stdout.writeln("Plese put assets into /assets folder at root of project");
   }
@@ -19,40 +20,51 @@ Future<void> generate() async {
   final folderFileMap = <String, Map<String, String>>{};
   final subEntityList = assetDir.listSync(recursive: true, followLinks: false);
   for (var fsEnitity in subEntityList) {
-    // this is the parent folder of the files
+    /// this is the parent folder of the files
     final folderPath = fsEnitity.parent.path;
 
     final entityStat = fsEnitity.statSync();
-    // if the entity is not a file then don't run
+
+    /// if the entity is not a file then don't run
     if (entityStat.type != FileSystemEntityType.file) continue;
 
     final fileBase = path.basename(fsEnitity.path);
-    // Don't run the parser if file is other than SVG,
+
+    /// Don't run the parser if file is other than SVG,
     // TODO: introduce a flag to enable ttfs
     if (!fileBase.endsWith('.svg')) continue;
 
     final folderBase = path.basename(folderPath);
 
-    // if the folder is already generated one then continue
+    /// if the folder is already generated one then continue
     if (folderPath.endsWith('bin')) continue;
-    //
+
+    ///
     final binFolderPath = '$folderPath-bin';
-    //
+
+    ///
     final binFolderDir = Directory(binFolderPath);
-    // Now the 'something-bin' folder is created
+
+    /// Now the 'something-bin' folder is created
     if (!binFolderDir.existsSync()) binFolderDir.createSync();
 
     final binFileBase = '$fileBase.vec';
 
-    // populate the folder file map
+    /// populate the folder file map
     final currentFolderFileMap =
         folderFileMap.putIfAbsent(folderBase, () => {});
 
     currentFolderFileMap[fileBase] = 'assets/$folderBase-bin/$binFileBase';
 
-    //INFO: Now comes the part where you conver the svgs into vec files
+    //final binFile = File(path.join(binFolderPath, binFileBase));
+    //if (binFile.existsSync()) {
+    //  stdout.writeln("Skipping $folderBase/$fileBase");
+    //}
+
+    ///INFO: Now comes the part where you conver the svgs into vec files
     stdout.writeln("Converting $folderBase/$fileBase -> $binFileBase");
-    // runs this is the home directory
+
+    /// runs this is the home directory
     final result = await Process.run('dart', [
       'run',
       'vector_graphics_compiler',
@@ -65,9 +77,10 @@ Future<void> generate() async {
   }
 
   Map<String, String> catCache = {};
-  //INFO: Now the dart file generation
+
+  ///INFO: Now the dart file generation
   final fileBuffer = StringBuffer()
-    ..writeln('//WARN: Generated File Don\'t edit by hand')
+    ..writeln('///WARN: Generated File Don\'t edit by hand')
     ..writeln()
     ..write(addAssetClassBuffer(folderFileMap))
     ..writeln()
@@ -91,7 +104,8 @@ Future<void> generate() async {
                 },
               ),
             )
-            // category instance names
+
+            /// category instance names
             ..writeAll(folderFileMap[folder]!.entries.map((e) {
               final lineTerm = Platform.lineTerminator;
               final assetName = e.key.split('.').first;
@@ -143,8 +157,9 @@ StringBuffer addCategoryClassBuffer(Map<String, String> map) {
                   "static final ${Utils.snakeTOPascalCase(categoryName)} _instance = ${Utils.snakeTOPascalCase(categoryName)}._internal(); $lineTerm")
               ..writeln(
                   "static ${Utils.snakeTOPascalCase(categoryName)} get instance => _instance; $lineTerm")
-              //..writeln(
-              //    'const ${Utils.snakeTOPascalCase(categoryName)} (); $lineTerm')
+
+              ///..writeln(
+              ///    'const ${Utils.snakeTOPascalCase(categoryName)} (); $lineTerm')
               ..writeAll(
                 map.entries.map(
                   (e) {
@@ -164,8 +179,9 @@ StringBuffer addCategoryClassBuffer(Map<String, String> map) {
                     final assetCatSplit = e.key.split('.');
                     final currenCatName = assetCatSplit.first.split('-').first;
                     if (currenCatName != categoryName) return '';
-                    //final assetName = assetCatSplit.first.split('-').last;
-                    //final assetNameCamel = Utils.snakeToCamelCase(assetName);
+
+                    ///final assetName = assetCatSplit.first.split('-').last;
+                    ///final assetNameCamel = Utils.snakeToCamelCase(assetName);
                     return "'${e.value}',";
                   },
                 ),
@@ -187,7 +203,8 @@ StringBuffer addAssetClassBuffer(Map<String, Map<String, String>> map) {
     ..writeAll(map.keys.map((key) {
       final className = Utils.kebabToPascalCase(key);
       final classInstanceName = Utils.kebabToCamelCase(key);
-      //INFO: static const className = ClassName();
+
+      // INFO: static const className = ClassName();
       return '\t static const $classInstanceName = $className() ; $lineTerm';
     }))
     ..writeln()

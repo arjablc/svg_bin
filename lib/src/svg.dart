@@ -23,6 +23,9 @@ class SvgBin extends StatelessWidget {
     this.fit,
 
     /// [ColorFilter] for the svg
+    /// Similar to the color filter
+    /// you use for the flutter_svg
+    /// package
     this.colorFilter,
     super.key,
   });
