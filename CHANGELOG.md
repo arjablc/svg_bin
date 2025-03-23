@@ -17,3 +17,9 @@ Bugfix: fixed the bug where you got `vector_graphics_compiler` is not found.
 Fix: Use the icon asset variable name rather than putting the whole path, making the "all" a getter.
 
 
+## 0.2.0
+Feat: Added arguments to the cli for now the -o or --output options are added, also added the help (--help or -h).
+
+
+
+

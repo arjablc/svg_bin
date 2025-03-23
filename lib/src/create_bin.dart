@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:svg_bin/src/utils.dart';
 
-Future<void> generate() async {
+Future<void> generate(String outputPath) async {
   final cwd = Directory.current;
   final assetFolder = 'assets';
   final lineTerm = Platform.lineTerminator;
@@ -129,9 +129,7 @@ Future<void> generate() async {
       ),
     );
 
-  await File(path.join(
-          cwd.path, 'lib', 'src', 'core', 'app_assets', 'assets.dart'))
-      .writeAsString(fileBuffer.toString());
+  await File(outputPath).writeAsString(fileBuffer.toString());
 }
 
 StringBuffer addCategoryClassBuffer(Map<String, String> map) {
