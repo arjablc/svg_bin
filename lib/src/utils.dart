@@ -1,3 +1,6 @@
+/// Util function to change the case
+library;
+
 class Utils {
   static String kebabToPascalCase(String input) {
     return kebabToCamelCase(input).replaceFirstMapped(
