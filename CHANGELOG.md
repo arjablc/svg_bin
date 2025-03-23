@@ -11,3 +11,7 @@ Updated readme.
 ## 0.1.210
 Bugfix: Fixed a bug where accessing properties of category class was not possible.
 Minor: Added feature for colorFilter for the SvgBin widget.
+
+## 0.2.0
+Feat: Added arguments to the cli for now the -o or --output options are added, also added the help (--help or -h).
+
