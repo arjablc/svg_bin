@@ -1,32 +1,54 @@
 import 'dart:io';
+import 'package:args/args.dart' show ArgParser, ArgResults;
 
-import 'package:svg_bin/src/create_bin.dart';
-import 'package:args/args.dart';
 import 'package:svg_bin/src/constants.dart';
+import 'package:svg_bin/src/create_bin.dart';
+import 'package:svg_bin/src/enums.dart';
 
 Future<void> main(List<String> args) async {
   final parser = ArgParser()
-    ..addFlag(
-      'cat',
-      abbr: 'c',
-      defaultsTo: false,
-      negatable: false,
-      help: "whether to create category classes or not",
-    )
-    ..addOption('path',
-        abbr: 'p',
-        defaultsTo:
-            "$defaultAssetFolder${Platform.pathSeparator}$defaultAssetFile",
-        help: "The file where the generated path class is kept");
+    //..addFlag(
+    //  'cat',
+    //  abbr: 'c',
+    //  defaultsTo: false,
+    //  negatable: false,
+    //  help: "whether to create category classes or not",
+    //)
+    ..addFlag('help', abbr: 'h')
+    ..addOption(
+      ArgsEnum.output.name,
+      abbr: ArgsEnum.output.abbr,
+      help: ArgsEnum.output.help,
+      defaultsTo: "$defaultAssetFolder$defaultAssetFile",
+    );
 
+  final ArgResults results;
   try {
-    final ArgResults res = parser.parse(args);
-  } catch (e) {
+    results = parser.parse(args);
+  } on FormatException catch (e) {
     stderr
-      ..write(e.toString())
-      ..writeln("Args error")
+      ..write(e.message)
       ..writeln()
       ..write(parser.usage);
+    exit(1);
   }
-  //await generate();
+
+  stdout.write(intro);
+  //INFO: wont ever be null because of the default value
+  final outDir = results.option(ArgsEnum.output.name)!;
+
+  if (validOutputDir(outDir)) {
+    await generate(outDir);
+  } else {
+    await generate(outDir);
+  }
+}
+
+bool validOutputDir(String path) {
+  final Directory dir = File(path).parent;
+  if (dir.existsSync()) {
+    return true;
+  }
+  dir.createSync(recursive: true);
+  return false;
 }
