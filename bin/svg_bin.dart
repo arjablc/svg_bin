@@ -14,7 +14,11 @@ Future<void> main(List<String> args) async {
     //  negatable: false,
     //  help: "whether to create category classes or not",
     //)
-    ..addFlag('help', abbr: 'h')
+    ..addFlag(
+      ArgsEnum.h.name,
+      abbr: ArgsEnum.h.abbr,
+      help: ArgsEnum.h.help,
+    )
     ..addOption(
       ArgsEnum.output.name,
       abbr: ArgsEnum.output.abbr,
@@ -36,6 +40,12 @@ Future<void> main(List<String> args) async {
   stdout.write(intro);
   //INFO: wont ever be null because of the default value
   final outDir = results.option(ArgsEnum.output.name)!;
+  final isHelp = results.flag(ArgsEnum.h.name) as bool?;
+
+  if (isHelp != null && isHelp == true) {
+    stdout.write(parser.usage);
+    exit(0);
+  }
 
   if (validOutputDir(outDir)) {
     await generate(outDir);
