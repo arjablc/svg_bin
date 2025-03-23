@@ -23,3 +23,5 @@ Feat: Added arguments to the cli for now the -o or --output options are added, a
 
 
 
+## 0.1.300
+Bugfix: fixed the bug where you got vector_graphics_compiler is not found.
