@@ -23,8 +23,10 @@ A helper flutter pacakge that converts your `.svg` files to binary with the exte
 - [x] generate  asset class
     - [x] folder asset class 
     - [x] category class
-- [ ] add args parser to toggle category modes
-- [ ] add args parser to change assets directory (input) and assets class directory(output)
+- [ ] ~~add args parser to toggle category modes~~
+- [x] add args parser to change assets directory (input) and assets class directory(output)
+- [ ] seperate converting files and creating the dart file.
+- [ ] seperate the bin folders out of the asset folder
 
 
 
