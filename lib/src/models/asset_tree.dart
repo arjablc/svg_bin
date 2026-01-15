@@ -71,9 +71,32 @@ class AssetTree {
     final folders = <AssetFolder>[];
     final topLevelEntities = await dir.list().toList();
 
+    // Check for nested svg subdirectory pattern
+    // e.g., assets/hello/svg, assets/bro/svg → unified Svg class
+    final nestedSvgDirs = await _findNestedSvgDirs(
+      topLevelEntities,
+      extension,
+      outputSuffix,
+    );
+
+    if (nestedSvgDirs.isNotEmpty) {
+      final unifiedFolder = await _buildUnifiedSvgFolder(
+        nestedSvgDirs,
+        extension,
+        outputSuffix,
+        outputExtension,
+      );
+      if (unifiedFolder.files.isNotEmpty || unifiedFolder.categories.isNotEmpty) {
+        folders.add(unifiedFolder);
+      }
+    }
+
     for (final entity in topLevelEntities) {
       if (entity is! Directory) continue;
       if (path.basename(entity.path).endsWith(outputSuffix)) continue;
+
+      // Skip directories that are part of the nested svg pattern
+      if (nestedSvgDirs.any((e) => e.parentPath == entity.path)) continue;
 
       final folder = await _buildFolder(
         entity,
@@ -88,6 +111,84 @@ class AssetTree {
     }
 
     return AssetTree(folders: folders);
+  }
+
+  /// Represents a nested svg directory pattern (e.g., assets/hello/svg)
+  static Future<List<_NestedSvgDir>> _findNestedSvgDirs(
+    List<FileSystemEntity> topLevelEntities,
+    String extension,
+    String outputSuffix,
+  ) async {
+    final nestedDirs = <_NestedSvgDir>[];
+
+    for (final entity in topLevelEntities) {
+      if (entity is! Directory) continue;
+      if (path.basename(entity.path).endsWith(outputSuffix)) continue;
+
+      final svgSubdir = Directory(path.join(entity.path, 'svg'));
+      if (await svgSubdir.exists()) {
+        // Check if it contains svg files
+        final svgFiles = await svgSubdir
+            .list()
+            .where((e) => e is File && e.path.endsWith(extension))
+            .toList();
+        if (svgFiles.isNotEmpty) {
+          nestedDirs.add(_NestedSvgDir(
+            parentPath: entity.path,
+            parentName: path.basename(entity.path),
+            svgDirPath: svgSubdir.path,
+          ));
+        }
+      }
+    }
+
+    return nestedDirs;
+  }
+
+  /// Build a unified folder from multiple nested svg directories
+  static Future<AssetFolder> _buildUnifiedSvgFolder(
+    List<_NestedSvgDir> nestedDirs,
+    String extension,
+    String outputSuffix,
+    String outputExtension,
+  ) async {
+    final categories = <AssetCategory>[];
+
+    for (final nested in nestedDirs) {
+      final files = <AssetFile>[];
+      final svgDir = Directory(nested.svgDirPath);
+      final entities = await svgDir.list().toList();
+
+      for (final entity in entities) {
+        if (entity is! File) continue;
+        final entityName = path.basename(entity.path);
+        if (!entityName.endsWith(extension)) continue;
+
+        final baseName = path.basenameWithoutExtension(entityName);
+        // Output goes to svg-bin next to svg directory
+        final outputDir = path.join(nested.parentPath, 'svg$outputSuffix');
+        final outputFile = '$entityName$outputExtension';
+
+        files.add(AssetFile(
+          name: baseName,
+          sourcePath: entity.path,
+          outputPath: path.join(outputDir, outputFile),
+        ));
+      }
+
+      if (files.isNotEmpty) {
+        categories.add(AssetCategory(
+          name: nested.parentName,
+          files: files,
+        ));
+      }
+    }
+
+    return AssetFolder(
+      name: 'svg',
+      files: [],
+      categories: categories,
+    );
   }
 
   static Future<AssetFolder> _buildFolder(
@@ -171,4 +272,17 @@ class AssetTree {
       files: files,
     );
   }
+}
+
+/// Helper class to track nested svg directory patterns
+class _NestedSvgDir {
+  final String parentPath;
+  final String parentName;
+  final String svgDirPath;
+
+  _NestedSvgDir({
+    required this.parentPath,
+    required this.parentName,
+    required this.svgDirPath,
+  });
 }

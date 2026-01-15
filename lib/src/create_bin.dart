@@ -78,8 +78,17 @@ Future<void> generate(
   if (!await dartDir.exists()) {
     await dartDir.create(recursive: true);
   }
-  await dartFile.writeAsString(dartCode);
-  stdout.writeln('Generated: ${path.relative(outputPath, from: cwd.path)}');
+
+  // Only write if content has changed
+  final existingContent =
+      await dartFile.exists() ? await dartFile.readAsString() : null;
+  if (existingContent != dartCode) {
+    await dartFile.writeAsString(dartCode);
+    stdout.writeln('Generated: ${path.relative(outputPath, from: cwd.path)}');
+  } else {
+    stdout.writeln(
+        'Skipped (unchanged): ${path.relative(outputPath, from: cwd.path)}');
+  }
 
   await manifest.save();
   stdout.writeln('Manifest saved: ${path.relative(manifest.manifestPath, from: cwd.path)}');
