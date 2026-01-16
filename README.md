@@ -13,20 +13,20 @@ and the Flutter guide for
 
 
 # SVG_BIN
-A helper flutter pacakge that converts your `.svg` files to binary with the extension `.vec` using `vector_graphics_compiler` and provides a widget to render those .vec files using `vector_graphics` package.
-- [vector_graphics_compiler](pub.dev/packages/vector_graphics_compiler)
+A helper Flutter package that converts your `.svg` files to binary with the extension `.vec` using `vector_graphics_compiler` and provides a widget to render those .vec files using `vector_graphics` package.
+- [vector_graphics_compiler](https://pub.dev/packages/vector_graphics_compiler)
 - [vector_graphics](https://pub.dev/packages/vector_graphics)
 ### Note: **Under Construction**
 
 ## Features
 - [x] generate .vec files
-- [x] generate  asset class
-    - [x] folder asset class 
+- [x] generate asset class
+    - [x] folder asset class
     - [x] category class
-- [ ] ~~add args parser to toggle category modes~~
+- [x] caching: only recompiles changed SVGs (hash-based manifest)
 - [x] add args parser to change assets directory (input) and assets class directory(output)
-- [ ] seperate converting files and creating the dart file.
-- [ ] seperate the bin folders out of the asset folder
+- [x] separate converting files and creating the dart file
+- [ ] separate the bin folders out of the asset folder
 
 
 
@@ -48,7 +48,7 @@ dart run svg_bin
 
 ## Usage
 
-**Currently this supports only one input direcotry which will be `/assets` in your flutter root.**
+**Currently this supports only one input directory which will be `/assets` in your Flutter root.**
 - Rename your assets to be in the following format:
 ```
 assets/subfolder/category_name-asset_name.svg

@@ -2,36 +2,93 @@
 library;
 
 class Utils {
-  static String kebabToPascalCase(String input) {
-    return kebabToCamelCase(input).replaceFirstMapped(
-      RegExp(r'^\w'),
-      (match) => match.group(0)!.toUpperCase(),
-    );
-  }
+  /// Splits input into words by detecting separators and case boundaries.
+  /// Handles: snake_case, kebab-case, space separated, dot.separated,
+  /// camelCase, PascalCase, and mixed formats.
+  static List<String> _splitIntoWords(String input) {
+    if (input.isEmpty) return [];
 
-  static String snakeToCamelCase(String input) {
-    if (input.contains('_')) {
-      return input.replaceAllMapped(
-        RegExp(r'_([a-z])'),
-        (Match match) => match.group(1)!.toUpperCase(),
-      );
+    // First, replace common separators with a single separator
+    var normalized = input
+        .replaceAll(RegExp(r'[-_.\s]+'), ' ')
+        .trim();
+
+    // Split on spaces and camelCase/PascalCase boundaries
+    final words = <String>[];
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < normalized.length; i++) {
+      final char = normalized[i];
+
+      if (char == ' ') {
+        if (buffer.isNotEmpty) {
+          words.add(buffer.toString());
+          buffer.clear();
+        }
+      } else if (i > 0 &&
+          _isUpperCase(char) &&
+          buffer.isNotEmpty &&
+          !_isUpperCase(normalized[i - 1])) {
+        // camelCase boundary: lowercase followed by uppercase
+        words.add(buffer.toString());
+        buffer.clear();
+        buffer.write(char);
+      } else if (i > 0 &&
+          i < normalized.length - 1 &&
+          _isUpperCase(char) &&
+          _isUpperCase(normalized[i - 1]) &&
+          !_isUpperCase(normalized[i + 1]) &&
+          normalized[i + 1] != ' ') {
+        // Handle acronyms: "XMLParser" -> "XML", "Parser"
+        words.add(buffer.toString());
+        buffer.clear();
+        buffer.write(char);
+      } else {
+        buffer.write(char);
+      }
     }
-    return input[0].toLowerCase() + input.substring(1);
+
+    if (buffer.isNotEmpty) {
+      words.add(buffer.toString());
+    }
+
+    return words.where((w) => w.isNotEmpty).toList();
   }
 
-  static String snakeTOPascalCase(String input) {
-    final camelCase = snakeToCamelCase(input);
-    return camelCase[0].toUpperCase() + camelCase.substring(1);
+  static bool _isUpperCase(String char) {
+    return char.toUpperCase() == char && char.toLowerCase() != char;
   }
 
-  static String kebabToCamelCase(String input) {
-    final regex = RegExp(r'-(\w)');
-    return input.replaceAllMapped(
-      regex,
-      (match) {
-        final matchedString = match.group(0)!;
-        return matchedString[1].toUpperCase();
-      },
-    );
+  /// Converts any input format to PascalCase.
+  /// Handles: snake_case, kebab-case, space separated, camelCase, etc.
+  static String toPascalCase(String input) {
+    final words = _splitIntoWords(input);
+    if (words.isEmpty) return input;
+
+    return words
+        .map((word) =>
+            word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join();
   }
+
+  /// Converts any input format to camelCase.
+  /// Handles: snake_case, kebab-case, space separated, PascalCase, etc.
+  static String toCamelCase(String input) {
+    final words = _splitIntoWords(input);
+    if (words.isEmpty) return input;
+
+    return words.asMap().entries.map((entry) {
+      final word = entry.value;
+      if (entry.key == 0) {
+        return word.toLowerCase();
+      }
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join();
+  }
+
+  // Legacy methods kept for backwards compatibility
+  static String kebabToPascalCase(String input) => toPascalCase(input);
+  static String snakeToCamelCase(String input) => toCamelCase(input);
+  static String snakeTOPascalCase(String input) => toPascalCase(input);
+  static String kebabToCamelCase(String input) => toCamelCase(input);
 }
