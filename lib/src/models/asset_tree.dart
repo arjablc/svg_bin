@@ -86,7 +86,8 @@ class AssetTree {
         outputSuffix,
         outputExtension,
       );
-      if (unifiedFolder.files.isNotEmpty || unifiedFolder.categories.isNotEmpty) {
+      if (unifiedFolder.files.isNotEmpty ||
+          unifiedFolder.categories.isNotEmpty) {
         folders.add(unifiedFolder);
       }
     }

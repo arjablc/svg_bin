@@ -26,8 +26,8 @@ class DartGenerator {
       ..writeln('final class AppAsset {')
       ..writeAll(
         tree.folders.map((folder) {
-          final className = Utils.snakeTOPascalCase(folder.name);
-          final instanceName = Utils.snakeToCamelCase(folder.name);
+          final className = Utils.toPascalCase(folder.name);
+          final instanceName = Utils.toCamelCase(folder.name);
           return '  static const $instanceName = $className();${Platform.lineTerminator}';
         }),
       )
@@ -37,21 +37,21 @@ class DartGenerator {
   }
 
   String _generateFolderClass(AssetFolder folder) {
-    final className = Utils.snakeTOPascalCase(folder.name);
+    final className = Utils.toPascalCase(folder.name);
     final buffer = StringBuffer()
       ..writeln('final class $className {')
       ..writeln('  const $className();')
       ..writeln();
 
     for (final file in folder.files) {
-      final getterName = Utils.snakeToCamelCase(file.name);
+      final getterName = Utils.toCamelCase(file.name);
       final relativePath = _toRelativeAssetPath(file.outputPath);
       buffer.writeln("  String get $getterName => '$relativePath';");
     }
 
     for (final category in folder.categories) {
-      final catClassName = Utils.snakeTOPascalCase(category.name);
-      final catInstanceName = Utils.snakeToCamelCase(category.name);
+      final catClassName = Utils.toPascalCase(category.name);
+      final catInstanceName = Utils.toCamelCase(category.name);
       buffer.writeln('  $catClassName get $catInstanceName => $catClassName();');
     }
 
@@ -59,7 +59,7 @@ class DartGenerator {
       buffer.writeln();
       buffer.writeln('  List<String> get all => [');
       for (final file in folder.files) {
-        final getterName = Utils.snakeToCamelCase(file.name);
+        final getterName = Utils.toCamelCase(file.name);
         buffer.writeln('    $getterName,');
       }
       buffer.writeln('  ];');
@@ -75,7 +75,7 @@ class DartGenerator {
   }
 
   String _generateCategoryClass(AssetCategory category, String folderName) {
-    final className = Utils.snakeTOPascalCase(category.name);
+    final className = Utils.toPascalCase(category.name);
     final buffer = StringBuffer()
       ..writeln()
       ..writeln('final class $className {')
@@ -83,7 +83,7 @@ class DartGenerator {
       ..writeln();
 
     for (final file in category.files) {
-      final getterName = Utils.snakeToCamelCase(file.name);
+      final getterName = Utils.toCamelCase(file.name);
       final relativePath = _toRelativeAssetPath(file.outputPath);
       buffer.writeln("  String get $getterName => '$relativePath';");
     }
@@ -91,7 +91,7 @@ class DartGenerator {
     buffer.writeln();
     buffer.writeln('  List<String> get all => [');
     for (final file in category.files) {
-      final getterName = Utils.snakeToCamelCase(file.name);
+      final getterName = Utils.toCamelCase(file.name);
       buffer.writeln('    $getterName,');
     }
     buffer.writeln('  ];');

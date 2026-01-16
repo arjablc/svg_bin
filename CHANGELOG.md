@@ -1,3 +1,10 @@
+## 0.4.0
+Feat: Universal casing normalization for generated classes.
+    - Class names are now properly normalized to PascalCase
+    - Variable names are normalized to camelCase
+    - Handles any input format: snake_case, kebab-case, space separated, dot.separated, camelCase, PascalCase, and mixed formats
+    - Added example project demonstrating usage
+
 ## 0.3.0
 Feat: Added caching for pre-generated SVG files using hash-based manifest.
     - Only recompiles SVGs that have changed, significantly improving build times
