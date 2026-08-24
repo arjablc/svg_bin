@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
-import 'package:svg_bin/src/models/asset.dart';
+import 'package:path_gen/src/models/asset.dart';
 
 class AssetScanner {
   final String assetPath;

@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:args/args.dart' show ArgParser, ArgResults;
 import 'package:path/path.dart' as path;
-import 'package:svg_bin/src/config.dart';
-import 'package:svg_bin/src/constants.dart';
-import 'package:svg_bin/src/create_bin.dart';
-import 'package:svg_bin/src/enums.dart';
+import 'package:path_gen/src/config.dart';
+import 'package:path_gen/src/constants.dart';
+import 'package:path_gen/src/create_bin.dart';
+import 'package:path_gen/src/enums.dart';
 
 Future<void> main(List<String> args) async {
   final parser = ArgParser()
@@ -47,7 +47,7 @@ Future<void> main(List<String> args) async {
 
   stdout.write(intro);
 
-  final config = await SvgBinConfig.load(Directory.current);
+  final config = await PathGenConfig.load(Directory.current);
   final outDir = results.option(ArgsEnum.output.name) ??
       path.join(config.output, defaultAssetFile);
   final force = results.flag('force');
@@ -62,6 +62,7 @@ Future<void> main(List<String> args) async {
     inputPath: config.input,
     generateAllGetter: config.generateAllGetter,
     transformSvgToVec: config.transformSvgToVec,
+    updateFlutterAssets: config.updateFlutterAssets,
     force: force,
   );
 }

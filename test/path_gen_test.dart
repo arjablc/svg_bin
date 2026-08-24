@@ -1,24 +1,26 @@
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:svg_bin/src/asset_scanner.dart';
-import 'package:svg_bin/src/config.dart';
-import 'package:svg_bin/src/create_bin.dart';
-import 'package:svg_bin/src/generator/dart_generator.dart';
-import 'package:svg_bin/src/models/asset.dart';
-import 'package:svg_bin/src/models/manifest.dart';
-import 'package:svg_bin/src/processors/svg_processor.dart';
-import 'package:svg_bin/src/utils.dart';
+import 'package:path_gen/src/asset_scanner.dart';
+import 'package:path_gen/src/config.dart';
+import 'package:path_gen/src/create_bin.dart';
+import 'package:path_gen/src/flutter_assets.dart';
+import 'package:path_gen/src/generator/dart_generator.dart';
+import 'package:path_gen/src/models/asset.dart';
+import 'package:path_gen/src/models/manifest.dart';
+import 'package:path_gen/src/processors/svg_processor.dart';
+import 'package:path_gen/src/utils.dart';
+import 'package:test/test.dart';
 
 void main() {
-  test('reads directories from the svg_bin pubspec section', () {
-    final defaults = SvgBinConfig.fromPubspec('name: example');
-    final config = SvgBinConfig.fromPubspec('''
-svg_bin:
+  test('reads directories from the path_gen pubspec section', () {
+    final defaults = PathGenConfig.fromPubspec('name: example');
+    final config = PathGenConfig.fromPubspec('''
+path_gen:
   input: assets/source
   output: lib/generated
   generate_all_getter: true
   transform_svg_to_vec: false
+  update_flutter_assets: false
 ''');
 
     expect(defaults.generateAllGetter, isFalse);
@@ -27,10 +29,90 @@ svg_bin:
     expect(config.output, 'lib/generated');
     expect(config.generateAllGetter, isTrue);
     expect(config.transformSvgToVec, isFalse);
+    expect(defaults.updateFlutterAssets, isTrue);
+    expect(config.updateFlutterAssets, isFalse);
+  });
+
+  test('syncs compiled asset directories without changing user entries',
+      () async {
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
+    addTearDown(() => root.delete(recursive: true));
+    final pubspec = File('${root.path}/pubspec.yaml');
+    await pubspec.writeAsString('''
+name: example
+flutter:
+  assets:
+    - assets/logo.png
+''');
+
+    await syncFlutterAssets(
+      pubspec,
+      flutterAssetDirectories([
+        'assets/icons-bin/home.svg.vec',
+        'assets/icons-bin/nested/star.svg.vec',
+        'assets/icons-bin/w-bin/settings.svg.vec',
+      ]),
+    );
+
+    expect(await pubspec.readAsString(), '''
+name: example
+flutter:
+  assets:
+    # path_gen:assets:start
+    - assets/icons-bin/
+    # path_gen:assets:end
+    - assets/logo.png
+''');
+  });
+
+  test('removes stale managed Flutter assets', () async {
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
+    addTearDown(() => root.delete(recursive: true));
+    final pubspec = File('${root.path}/pubspec.yaml');
+    await pubspec.writeAsString('''
+flutter:
+  assets:
+    # path_gen:assets:start
+    - assets/icons-bin/old.svg.vec
+    # path_gen:assets:end
+    - assets/logo.png
+''');
+
+    await syncFlutterAssets(pubspec, const []);
+
+    expect(await pubspec.readAsString(), '''
+flutter:
+  assets:
+    - assets/logo.png
+''');
+  });
+
+  test('creates flutter assets when missing', () async {
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
+    addTearDown(() => root.delete(recursive: true));
+    final pubspec = File('${root.path}/pubspec.yaml');
+    await pubspec.writeAsString('''
+flutter:
+  uses-material-design: true
+''');
+
+    await syncFlutterAssets(
+      pubspec,
+      flutterAssetDirectories(['assets/icons-bin/home.svg.vec']),
+    );
+
+    expect(await pubspec.readAsString(), '''
+flutter:
+  assets:
+    # path_gen:assets:start
+    - assets/icons-bin/
+    # path_gen:assets:end
+  uses-material-design: true
+''');
   });
 
   test('generates direct-file all getters when enabled', () async {
-    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
     addTearDown(() => root.delete(recursive: true));
 
     final icons = Directory('${root.path}/assets/icons');
@@ -59,15 +141,17 @@ svg_bin:
     expect(code, contains('IconsPost get post => const IconsPost();'));
     expect(code, contains('String get ico1'));
     expect(code, contains('String get ico3'));
-    expect(code, contains('List<String> get all => [\n    root,\n  ];'));
+    expect(
+        code, contains('List<String> get all => [\n        root,\n      ];'));
     expect(
       code,
-      contains('List<String> get all => [\n    ico1,\n    ico3,\n  ];'),
+      contains(
+          'List<String> get all => [\n        ico1,\n        ico3,\n      ];'),
     );
   });
 
   test('omits all getters and keeps raw SVG paths when configured', () async {
-    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
     addTearDown(() => root.delete(recursive: true));
 
     final icons = Directory('${root.path}/assets/icons');
@@ -96,7 +180,7 @@ svg_bin:
   });
 
   test('rejects names that generate the same member', () async {
-    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
     addTearDown(() => root.delete(recursive: true));
 
     final icons = Directory('${root.path}/assets/icons');
@@ -118,7 +202,7 @@ svg_bin:
 
   test('scans raw assets at arbitrary depth and excludes generated output',
       () async {
-    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
     addTearDown(() => root.delete(recursive: true));
 
     final assets = Directory('${root.path}/assets');
@@ -148,7 +232,7 @@ svg_bin:
 
   test('diffs asset additions, changes, removals, and unchanged files',
       () async {
-    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
     addTearDown(() => root.delete(recursive: true));
 
     final assets = Directory('${root.path}/assets');
@@ -183,7 +267,7 @@ svg_bin:
   });
 
   test('deletes generated output for removed assets', () async {
-    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    final root = await Directory.systemTemp.createTemp('path_gen_test_');
     addTearDown(() => root.delete(recursive: true));
 
     final assets = Directory('${root.path}/assets');

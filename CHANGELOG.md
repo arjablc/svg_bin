@@ -37,7 +37,6 @@ Bugfix: fixed the bug where you got `vector_graphics_compiler` is not found.
 
 ## 0.1.210
 Bugfix: Fixed a bug where accessing properties of category class was not possible.
-Minor: Added feature for colorFilter for the SvgBin widget.
 
 ## 0.1.1
 Updated readme.

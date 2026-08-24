@@ -12,21 +12,11 @@ and the Flutter guide for
 -->
 
 
-> [!WARNING]
-> This package started as one off util and I decided I should publish it to pub.dev, at that time I was only concerned with 
-> compiling vectors and then generating the app assets dart file with file paths.
-> With time I wanted something more than that, and the name svg_bin won't do it any justice. 
-> I am moving to a new package on pub.dev. Come along to path_gen
->
-> This package is discontinued and will no longer receive updates or support. Please avoid using it in new projects.
-> 
+# Path Gen
 
-# SVG_BIN
-A Flutter asset generator that optionally converts SVG files to `.vec` with `vector_graphics_compiler` and generates typed asset paths.
-- [vector_graphics_compiler](https://pub.dev/packages/vector_graphics_compiler)
-- [vector_graphics](https://pub.dev/packages/vector_graphics)
+`path_gen` generates typed Dart asset paths from your asset directories. It can also compile SVG files to `.vec` with [`vector_graphics_compiler`](https://pub.dev/packages/vector_graphics_compiler).
 ## Features
-- [x] generate .vec files
+- [x] optionally generate .vec files
 - [x] generate asset classes for arbitrary directory depth
 - [x] scan raw assets such as PNG, JPEG, JSON, and SVG
 - [x] cache the full asset pipeline with a hash-based manifest
@@ -34,37 +24,45 @@ A Flutter asset generator that optionally converts SVG files to `.vec` with `vec
 
 
 
-## Getting started
+## Install
 
-- Install the package using following command inside your flutter project.
+Add `path_gen` to the consumer app:
 
 ``` bash
-flutter pub add svg_bin
+flutter pub add path_gen
 ```
 
-- Generate the vec files using the following command
+Run it from that app's root:
+
 ``` bash
-dart run svg_bin
+dart run path_gen
 ```
-- The `AppAsset` class is generated inside `/lib/assets/app_asset.dart` by default.
-- Render the .vec with the `SvgBin()` widget
 
+Or install the executable globally:
 
-## Usage
+```bash
+dart pub global activate path_gen
+path_gen
+```
+
+The global command reads the `path_gen` configuration from the `pubspec.yaml` in the current directory, so it does not need to be added as a dependency to each consumer app.
+
+## Configuration
 
 Configure the source asset and generated Dart directories in the consumer app's `pubspec.yaml`:
 
 ```yaml
-svg_bin:
+path_gen:
   input: assets
   output: lib/assets
   generate_all_getter: false
   transform_svg_to_vec: true
+  update_flutter_assets: true
 ```
 
 Both paths are relative to the app root. The generated file is `app_asset.dart` in the configured output directory. `generate_all_getter` adds a direct-files-only `List<String> get all` to generated classes.
 
-Assets are scanned recursively. Raw files such as PNG, JPEG, and JSON are used directly. With `transform_svg_to_vec: true`, SVG output is written to a sibling `*-bin` directory and must be declared in the app's `flutter.assets`; those generated directories are excluded from scanning. Set it to `false` to use raw SVG paths instead. `SvgBin` only renders compiled `.vec` paths.
+Assets are scanned recursively. Raw files such as PNG, JPEG, JSON, and SVG are used directly. With `transform_svg_to_vec: true`, SVG output is written to a sibling `*-bin` directory and its top-level directory is added to a managed block in the app's `flutter.assets`. Set `update_flutter_assets: false` to prevent that update. Set `transform_svg_to_vec` to `false` to keep raw SVG paths and render them with your preferred package, such as `flutter_svg`.
 
 For example:
 ```
@@ -73,21 +71,23 @@ assets/icons/post/ico1.svg
 ```
 generates `AppAsset.illustrations.animals.birds.eagle` and `AppAsset.icons.post.ico1`.
 
-Then run `dart run svg_bin` at the app root. Make sure generated `*-bin` directories are included under `flutter.assets` when SVG compilation is enabled.
+Then run `dart run path_gen` at the app root. Make sure generated `*-bin` directories are included under `flutter.assets` when SVG compilation is enabled.
 
 For assets like:
 ```
 assets/icons/post/ico1.svg
 assets/icons/post/ico3.svg
 ```
-after running the command
+after running the command:
 ```dart
-SvgBin(
-  AppAsset.icons.post.ico1,
-)
+SvgPicture.asset(AppAsset.icons.post.ico1)
 
 final postIcons = AppAsset.icons.post.all;
 ```
+
+## Compared with flutter_gen
+
+Like `flutter_gen`, `path_gen` generates typed asset paths. Unlike `flutter_gen`, it runs as a command when you choose, uses no `build_runner`, and can optionally compile SVG files to `.vec`.
 
 ## Additional information
 
