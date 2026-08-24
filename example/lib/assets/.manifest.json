@@ -1,31 +1,36 @@
 {
-  "version": "1.0",
-  "generated_at": "2026-01-17T01:26:00.523110",
+  "version": "2.0",
+  "generated_at": "2026-08-25T00:23:16.634164",
   "assets": {
-    "/home/knot/Devl/flutter/svg_bin/example/assets/icons/star.svg": {
-      "hash": "da9b28912478affe572eaee7f5c807362295fa59df87a87d91b1186fa3bdb9e5",
-      "output": "/home/knot/Devl/flutter/svg_bin/example/assets/icons-bin/star.svg.vec",
-      "compiled_at": "2026-01-17T01:24:09.788449"
-    },
-    "/home/knot/Devl/flutter/svg_bin/example/assets/icons/st-icons/home-icon.svg": {
-      "hash": "f34ccb881f1ef5fbcff5e6460a9aa4bc98346a6a79c6c40dd33ea0c3a0f72ac4",
-      "output": "/home/knot/Devl/flutter/svg_bin/example/assets/icons-bin/st-icons/home-icon.svg.vec",
-      "compiled_at": "2026-01-17T01:24:10.138164"
-    },
-    "/home/knot/Devl/flutter/svg_bin/example/assets/icons/st-icons/settings_icon.svg": {
-      "hash": "d98ad153459b3ac1471aa890e551d306761452db863faf3aa4c2af9ee0a41bbd",
-      "output": "/home/knot/Devl/flutter/svg_bin/example/assets/icons-bin/st-icons/settings_icon.svg.vec",
-      "compiled_at": "2026-01-17T01:24:10.585129"
-    },
-    "/home/knot/Devl/flutter/svg_bin/example/assets/icons/nav_icons/arrow-left.svg": {
+    "icons/nav_icons/arrow-left.svg": {
       "hash": "637c55e34f1dd7008bea5333abe0e515d0b9d5aaf52060834b7f63969332b5dc",
-      "output": "/home/knot/Devl/flutter/svg_bin/example/assets/icons-bin/nav_icons/arrow-left.svg.vec",
-      "compiled_at": "2026-01-17T01:24:10.946259"
+      "output": "assets/icons-bin/nav_icons/arrow-left.svg.vec",
+      "processor": "svg_to_vec",
+      "processor_version": "1"
     },
-    "/home/knot/Devl/flutter/svg_bin/example/assets/icons/nav_icons/arrow_right.svg": {
+    "icons/nav_icons/arrow_right.svg": {
       "hash": "6754bf6aef45a3f8d199dd2eeb7dcbd6473fe961ced2c4a9a4537d8f3d62ea87",
-      "output": "/home/knot/Devl/flutter/svg_bin/example/assets/icons-bin/nav_icons/arrow_right.svg.vec",
-      "compiled_at": "2026-01-17T01:24:11.336668"
+      "output": "assets/icons-bin/nav_icons/arrow_right.svg.vec",
+      "processor": "svg_to_vec",
+      "processor_version": "1"
+    },
+    "icons/st-icons/home-icon.svg": {
+      "hash": "f34ccb881f1ef5fbcff5e6460a9aa4bc98346a6a79c6c40dd33ea0c3a0f72ac4",
+      "output": "assets/icons-bin/st-icons/home-icon.svg.vec",
+      "processor": "svg_to_vec",
+      "processor_version": "1"
+    },
+    "icons/st-icons/settings_icon.svg": {
+      "hash": "d98ad153459b3ac1471aa890e551d306761452db863faf3aa4c2af9ee0a41bbd",
+      "output": "assets/icons-bin/st-icons/settings_icon.svg.vec",
+      "processor": "svg_to_vec",
+      "processor_version": "1"
+    },
+    "icons/star.svg": {
+      "hash": "da9b28912478affe572eaee7f5c807362295fa59df87a87d91b1186fa3bdb9e5",
+      "output": "assets/icons-bin/star.svg.vec",
+      "processor": "svg_to_vec",
+      "processor_version": "1"
     }
   }
 }

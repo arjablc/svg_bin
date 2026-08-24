@@ -9,28 +9,16 @@ final class Icons {
   const Icons();
 
   String get star => 'assets/icons-bin/star.svg.vec';
-  StIcons get stIcons => StIcons();
-  NavIcons get navIcons => NavIcons();
+  IconsNavIcons get navIcons => const IconsNavIcons();
+  IconsStIcons get stIcons => const IconsStIcons();
 
   List<String> get all => [
     star,
   ];
 }
 
-final class StIcons {
-  const StIcons();
-
-  String get homeIcon => 'assets/icons-bin/st-icons/home-icon.svg.vec';
-  String get settingsIcon => 'assets/icons-bin/st-icons/settings_icon.svg.vec';
-
-  List<String> get all => [
-    homeIcon,
-    settingsIcon,
-  ];
-}
-
-final class NavIcons {
-  const NavIcons();
+final class IconsNavIcons {
+  const IconsNavIcons();
 
   String get arrowLeft => 'assets/icons-bin/nav_icons/arrow-left.svg.vec';
   String get arrowRight => 'assets/icons-bin/nav_icons/arrow_right.svg.vec';
@@ -38,5 +26,17 @@ final class NavIcons {
   List<String> get all => [
     arrowLeft,
     arrowRight,
+  ];
+}
+
+final class IconsStIcons {
+  const IconsStIcons();
+
+  String get homeIcon => 'assets/icons-bin/st-icons/home-icon.svg.vec';
+  String get settingsIcon => 'assets/icons-bin/st-icons/settings_icon.svg.vec';
+
+  List<String> get all => [
+    homeIcon,
+    settingsIcon,
   ];
 }
