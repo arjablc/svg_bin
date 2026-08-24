@@ -108,8 +108,9 @@ Future<void> generate(
 
   stdout.writeln();
   if (compiledCount > 0) stdout.writeln('Compiled: $compiledCount file(s)');
-  if (skippedCount > 0)
+  if (skippedCount > 0) {
     stdout.writeln('Skipped (unchanged): $skippedCount file(s)');
+  }
   if (errorCount > 0) stderr.writeln('Errors: $errorCount file(s)');
 
   manifest.replace(entries);
