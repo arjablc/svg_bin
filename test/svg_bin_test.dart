@@ -5,6 +5,7 @@ import 'package:svg_bin/src/asset_scanner.dart';
 import 'package:svg_bin/src/config.dart';
 import 'package:svg_bin/src/create_bin.dart';
 import 'package:svg_bin/src/generator/dart_generator.dart';
+import 'package:svg_bin/src/models/asset.dart';
 import 'package:svg_bin/src/models/manifest.dart';
 import 'package:svg_bin/src/processors/svg_processor.dart';
 import 'package:svg_bin/src/utils.dart';
@@ -209,5 +210,44 @@ svg_bin:
     );
 
     expect(await staleOutput.exists(), isFalse);
+  });
+
+  test('invalidates SVG processing when its identity changes', () {
+    const asset = Asset(
+      sourcePath: '/project/assets/icon.svg',
+      relativePath: 'icon.svg',
+      type: '.svg',
+      hash: 'hash',
+      runtimePath: 'assets/icon.svg',
+    );
+    final processor = SvgProcessor();
+    const output = 'assets-bin/icon.svg.vec';
+    final matching = AssetEntry(
+      hash: asset.hash,
+      output: output,
+      processor: processor.id,
+      processorVersion: processor.version,
+    );
+
+    expect(
+      needsProcessing(
+        asset: asset,
+        previous: matching,
+        processor: processor,
+        runtimeOutput: output,
+        force: false,
+      ),
+      isFalse,
+    );
+    expect(
+      needsProcessing(
+        asset: asset,
+        previous: const AssetEntry(hash: 'hash'),
+        processor: processor,
+        runtimeOutput: output,
+        force: false,
+      ),
+      isTrue,
+    );
   });
 }

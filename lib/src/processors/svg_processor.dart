@@ -4,9 +4,12 @@ import 'package:path/path.dart' as path;
 import 'package:svg_bin/src/models/asset.dart';
 
 abstract class ResourceProcessor {
-  String get inputExtension;
-  String get outputExtension;
+  String get id;
+  String get version;
 
+  bool supports(Asset asset);
+  String outputFor(Asset asset);
+  bool isGeneratedOutput(String relativePath);
   Future<ProcessResult> process(String inputPath, String outputPath);
 }
 
@@ -22,14 +25,19 @@ class ProcessResult {
 }
 
 class SvgProcessor implements ResourceProcessor {
-  @override
-  String get inputExtension => '.svg';
+  static const _inputExtension = '.svg';
+  static const _outputExtension = '.vec';
 
   @override
-  String get outputExtension => '.vec';
+  String get id => 'svg_to_vec';
 
-  bool supports(Asset asset) => asset.type == inputExtension;
+  @override
+  String get version => '1';
 
+  @override
+  bool supports(Asset asset) => asset.type == _inputExtension;
+
+  @override
   String outputFor(Asset asset) {
     final segments = path.split(asset.relativePath);
     final sourceRoot = segments.length == 1
@@ -44,10 +52,11 @@ class SvgProcessor implements ResourceProcessor {
     return path.joinAll([
       outputRoot,
       if (segments.length > 2) ...segments.sublist(1, segments.length - 1),
-      '${path.basename(asset.relativePath)}$outputExtension',
+      '${path.basename(asset.relativePath)}$_outputExtension',
     ]);
   }
 
+  @override
   bool isGeneratedOutput(String relativePath) =>
       path.split(relativePath).any((part) => part.endsWith('-bin'));
 

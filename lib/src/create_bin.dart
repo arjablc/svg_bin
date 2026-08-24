@@ -26,11 +26,14 @@ Future<void> generate(
   }
 
   stdout.writeln('Scanning assets...');
-  final processor = SvgProcessor();
+  final svgProcessor = SvgProcessor();
+  final processors = transformSvgToVec
+      ? <ResourceProcessor>[svgProcessor]
+      : <ResourceProcessor>[];
   final assets = await AssetScanner(
     assetPath: assetPath,
     projectPath: cwd.path,
-    isExcluded: processor.isGeneratedOutput,
+    isExcluded: svgProcessor.isGeneratedOutput,
   ).scan();
 
   if (assets.isEmpty) {
@@ -41,72 +44,73 @@ Future<void> generate(
   final manifest = await Manifest.load(File(outputPath).parent.path);
   final diff = manifest.diff(assets);
   for (final entry in diff.removed.values) {
-    await _deleteOutput(entry.output, processor);
+    await _deleteOutput(entry.output, [svgProcessor]);
   }
 
   final generatedAssets = <Asset>[];
   final entries = <String, AssetEntry>{};
-  if (transformSvgToVec) {
-    var compiledCount = 0;
-    var skippedCount = 0;
-    var errorCount = 0;
-
-    for (final asset in assets) {
-      if (!processor.supports(asset)) {
-        generatedAssets.add(asset);
-        entries[asset.relativePath] = AssetEntry(hash: asset.hash);
-        continue;
-      }
-      final outputPath = processor.outputFor(asset);
-      final needsCompile = force ||
-          !diff.unchanged.containsKey(asset.relativePath) ||
-          manifest[asset.relativePath]?.output == null;
-      if (!needsCompile) {
-        generatedAssets.add(asset.copyWith(
-          runtimePath: path
-              .relative(outputPath, from: cwd.path)
-              .replaceAll(path.separator, '/'),
-        ));
-        entries[asset.relativePath] = AssetEntry(
-          hash: asset.hash,
-          output: path
-              .relative(outputPath, from: cwd.path)
-              .replaceAll(path.separator, '/'),
-        );
-        skippedCount++;
-        continue;
-      }
-
-      final relativeSrc = path.relative(asset.sourcePath, from: cwd.path);
-      final relativeOut = path.relative(outputPath, from: cwd.path);
-      stdout.writeln('Compiling: $relativeSrc -> $relativeOut');
-
-      final result = await processor.process(asset.sourcePath, outputPath);
-      if (result.success) {
-        generatedAssets.add(asset.copyWith(runtimePath: relativeOut));
-        entries[asset.relativePath] = AssetEntry(
-          hash: asset.hash,
-          output: relativeOut,
-        );
-        compiledCount++;
-      } else {
-        generatedAssets.add(asset.copyWith(runtimePath: relativeOut));
-        stderr.writeln('  Error: ${result.error}');
-        errorCount++;
-      }
-    }
-
-    stdout.writeln();
-    if (compiledCount > 0) stdout.writeln('Compiled: $compiledCount file(s)');
-    if (skippedCount > 0)
-      stdout.writeln('Skipped (unchanged): $skippedCount file(s)');
-    if (errorCount > 0) stderr.writeln('Errors: $errorCount file(s)');
-  } else {
-    for (final asset in assets) {
+  var compiledCount = 0;
+  var skippedCount = 0;
+  var errorCount = 0;
+  for (final asset in assets) {
+    final processor = _processorFor(asset, processors);
+    final previous = manifest[asset.relativePath];
+    if (processor == null) {
+      await _deleteOutput(previous?.output, [svgProcessor]);
       generatedAssets.add(asset);
       entries[asset.relativePath] = AssetEntry(hash: asset.hash);
+      continue;
+    }
+
+    final outputPath = processor.outputFor(asset);
+    final runtimeOutput = path
+        .relative(outputPath, from: cwd.path)
+        .replaceAll(path.separator, '/');
+    if (previous?.output != null && previous!.output != runtimeOutput) {
+      await _deleteOutput(previous.output, [svgProcessor]);
+    }
+    if (!needsProcessing(
+      asset: asset,
+      previous: previous,
+      processor: processor,
+      runtimeOutput: runtimeOutput,
+      force: force,
+    )) {
+      generatedAssets.add(asset.copyWith(runtimePath: runtimeOutput));
+      entries[asset.relativePath] = AssetEntry(
+        hash: asset.hash,
+        output: runtimeOutput,
+        processor: processor.id,
+        processorVersion: processor.version,
+      );
+      skippedCount++;
+      continue;
+    }
+
+    final relativeSrc = path.relative(asset.sourcePath, from: cwd.path);
+    stdout.writeln('Compiling: $relativeSrc -> $runtimeOutput');
+    final result = await processor.process(asset.sourcePath, outputPath);
+    if (result.success) {
+      generatedAssets.add(asset.copyWith(runtimePath: runtimeOutput));
+      entries[asset.relativePath] = AssetEntry(
+        hash: asset.hash,
+        output: runtimeOutput,
+        processor: processor.id,
+        processorVersion: processor.version,
+      );
+      compiledCount++;
+    } else {
+      generatedAssets.add(asset.copyWith(runtimePath: runtimeOutput));
+      stderr.writeln('  Error: ${result.error}');
+      errorCount++;
     }
   }
+
+  stdout.writeln();
+  if (compiledCount > 0) stdout.writeln('Compiled: $compiledCount file(s)');
+  if (skippedCount > 0)
+    stdout.writeln('Skipped (unchanged): $skippedCount file(s)');
+  if (errorCount > 0) stderr.writeln('Errors: $errorCount file(s)');
 
   manifest.replace(entries);
   await manifest.save();
@@ -135,8 +139,37 @@ Future<void> generate(
   }
 }
 
-Future<void> _deleteOutput(String? output, SvgProcessor processor) async {
-  if (output == null || !processor.isGeneratedOutput(output)) return;
+ResourceProcessor? _processorFor(
+  Asset asset,
+  Iterable<ResourceProcessor> processors,
+) {
+  for (final processor in processors) {
+    if (processor.supports(asset)) return processor;
+  }
+  return null;
+}
+
+bool needsProcessing({
+  required Asset asset,
+  required AssetEntry? previous,
+  required ResourceProcessor processor,
+  required String runtimeOutput,
+  required bool force,
+}) =>
+    force ||
+    previous == null ||
+    previous.hash != asset.hash ||
+    previous.output != runtimeOutput ||
+    previous.processor != processor.id ||
+    previous.processorVersion != processor.version;
+
+Future<void> _deleteOutput(
+  String? output,
+  Iterable<ResourceProcessor> processors,
+) async {
+  if (output == null || !processors.any((p) => p.isGeneratedOutput(output))) {
+    return;
+  }
 
   final file = File(path.isAbsolute(output)
       ? output
