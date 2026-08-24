@@ -1,50 +1,63 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
+import 'package:svg_bin/src/models/asset.dart';
 
 class AssetEntry {
   final String hash;
-  final String output;
-  final DateTime compiledAt;
+  final String? output;
+  final String? processor;
+  final String? processorVersion;
 
-  AssetEntry({
+  const AssetEntry({
     required this.hash,
-    required this.output,
-    required this.compiledAt,
+    this.output,
+    this.processor,
+    this.processorVersion,
   });
 
-  factory AssetEntry.fromJson(Map<String, dynamic> json) {
-    return AssetEntry(
-      hash: json['hash'] as String,
-      output: json['output'] as String,
-      compiledAt: DateTime.parse(json['compiled_at'] as String),
-    );
-  }
+  factory AssetEntry.fromJson(Map<String, dynamic> json) => AssetEntry(
+        hash: json['hash'] as String,
+        output: json['output'] as String?,
+        processor: json['processor'] as String?,
+        processorVersion: json['processor_version'] as String?,
+      );
 
   Map<String, dynamic> toJson() => {
         'hash': hash,
         'output': output,
-        'compiled_at': compiledAt.toIso8601String(),
+        'processor': processor,
+        'processor_version': processorVersion,
       };
 }
 
+class ManifestDiff {
+  final Map<String, Asset> added;
+  final Map<String, Asset> modified;
+  final Map<String, Asset> unchanged;
+  final Map<String, AssetEntry> removed;
+
+  const ManifestDiff({
+    required this.added,
+    required this.modified,
+    required this.unchanged,
+    required this.removed,
+  });
+}
+
 class Manifest {
-  static const String _version = '1.0';
+  static const String _version = '2.0';
   static const String _fileName = '.manifest.json';
 
   final String _outputDir;
-  final Map<String, AssetEntry> _assets;
-  DateTime _generatedAt;
+  Map<String, AssetEntry> _assets;
 
   Manifest._({
     required String outputDir,
     required Map<String, AssetEntry> assets,
-    required DateTime generatedAt,
   })  : _outputDir = outputDir,
-        _assets = assets,
-        _generatedAt = generatedAt;
+        _assets = assets;
 
   String get manifestPath => path.join(_outputDir, _fileName);
 
@@ -52,93 +65,75 @@ class Manifest {
     final manifestFile = File(path.join(outputDir, _fileName));
 
     if (!await manifestFile.exists()) {
-      return Manifest._(
-        outputDir: outputDir,
-        assets: {},
-        generatedAt: DateTime.now(),
-      );
+      return Manifest._(outputDir: outputDir, assets: {});
     }
 
     try {
-      final content = await manifestFile.readAsString();
-      final json = jsonDecode(content) as Map<String, dynamic>;
-
+      final json =
+          jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
       final assetsJson = json['assets'] as Map<String, dynamic>? ?? {};
-      final assets = assetsJson.map(
-        (key, value) => MapEntry(
-          key,
-          AssetEntry.fromJson(value as Map<String, dynamic>),
+
+      return Manifest._(
+        outputDir: outputDir,
+        assets: assetsJson.map(
+          (key, value) => MapEntry(
+            key,
+            AssetEntry.fromJson(value as Map<String, dynamic>),
+          ),
         ),
       );
-
-      return Manifest._(
-        outputDir: outputDir,
-        assets: assets,
-        generatedAt: DateTime.tryParse(json['generated_at'] as String? ?? '') ??
-            DateTime.now(),
-      );
-    } catch (e) {
-      stderr.writeln('Warning: Could not parse manifest, starting fresh: $e');
-      return Manifest._(
-        outputDir: outputDir,
-        assets: {},
-        generatedAt: DateTime.now(),
-      );
+    } catch (error) {
+      stderr
+          .writeln('Warning: Could not parse manifest, starting fresh: $error');
+      return Manifest._(outputDir: outputDir, assets: {});
     }
   }
 
-  Future<bool> needsRecompile(String sourcePath) async {
-    final file = File(sourcePath);
-    if (!await file.exists()) return false;
+  ManifestDiff diff(List<Asset> assets) {
+    final current = {for (final asset in assets) asset.relativePath: asset};
+    final added = <String, Asset>{};
+    final modified = <String, Asset>{};
+    final unchanged = <String, Asset>{};
 
-    final currentHash = await _computeHash(file);
-    final entry = _assets[sourcePath];
+    for (final entry in current.entries) {
+      final previous = _assets[entry.key];
+      if (previous == null) {
+        added[entry.key] = entry.value;
+      } else if (previous.hash == entry.value.hash) {
+        unchanged[entry.key] = entry.value;
+      } else {
+        modified[entry.key] = entry.value;
+      }
+    }
 
-    if (entry == null) return true;
-    return entry.hash != currentHash;
-  }
+    final removed = Map<String, AssetEntry>.fromEntries(
+      _assets.entries.where((entry) => !current.containsKey(entry.key)),
+    );
 
-  Future<String> _computeHash(File file) async {
-    final bytes = await file.readAsBytes();
-    return sha256.convert(bytes).toString();
-  }
-
-  Future<void> update(String sourcePath, String outputPath) async {
-    final file = File(sourcePath);
-    final hash = await _computeHash(file);
-
-    _assets[sourcePath] = AssetEntry(
-      hash: hash,
-      output: outputPath,
-      compiledAt: DateTime.now(),
+    return ManifestDiff(
+      added: added,
+      modified: modified,
+      unchanged: unchanged,
+      removed: removed,
     );
   }
 
-  void remove(String sourcePath) {
-    _assets.remove(sourcePath);
-  }
+  AssetEntry? operator [](String relativePath) => _assets[relativePath];
 
-  bool hasEntry(String sourcePath) => _assets.containsKey(sourcePath);
-
-  AssetEntry? getEntry(String sourcePath) => _assets[sourcePath];
+  void replace(Map<String, AssetEntry> assets) => _assets = assets;
 
   Future<void> save() async {
-    _generatedAt = DateTime.now();
-
-    final json = {
-      'version': _version,
-      'generated_at': _generatedAt.toIso8601String(),
-      'assets': _assets.map((key, value) => MapEntry(key, value.toJson())),
-    };
-
-    final dir = Directory(_outputDir);
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
+    final directory = Directory(_outputDir);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
     }
 
-    final file = File(manifestPath);
-    await file.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(json),
+    await File(manifestPath).writeAsString(
+      const JsonEncoder.withIndent('  ').convert({
+        'version': _version,
+        'generated_at': DateTime.now().toIso8601String(),
+        'assets': _assets.map((key, value) => MapEntry(key, value.toJson())),
+      }),
     );
   }
 }

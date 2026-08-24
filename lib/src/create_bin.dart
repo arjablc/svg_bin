@@ -38,9 +38,15 @@ Future<void> generate(
     return;
   }
 
+  final manifest = await Manifest.load(File(outputPath).parent.path);
+  final diff = manifest.diff(assets);
+  for (final entry in diff.removed.values) {
+    await _deleteOutput(entry.output, processor);
+  }
+
+  final generatedAssets = <Asset>[];
+  final entries = <String, AssetEntry>{};
   if (transformSvgToVec) {
-    final manifest = await Manifest.load(File(outputPath).parent.path);
-    final generatedAssets = <Asset>[];
     var compiledCount = 0;
     var skippedCount = 0;
     var errorCount = 0;
@@ -48,17 +54,25 @@ Future<void> generate(
     for (final asset in assets) {
       if (!processor.supports(asset)) {
         generatedAssets.add(asset);
+        entries[asset.relativePath] = AssetEntry(hash: asset.hash);
         continue;
       }
       final outputPath = processor.outputFor(asset);
-      final needsCompile =
-          force || await manifest.needsRecompile(asset.sourcePath);
+      final needsCompile = force ||
+          !diff.unchanged.containsKey(asset.relativePath) ||
+          manifest[asset.relativePath]?.output == null;
       if (!needsCompile) {
         generatedAssets.add(asset.copyWith(
           runtimePath: path
               .relative(outputPath, from: cwd.path)
               .replaceAll(path.separator, '/'),
         ));
+        entries[asset.relativePath] = AssetEntry(
+          hash: asset.hash,
+          output: path
+              .relative(outputPath, from: cwd.path)
+              .replaceAll(path.separator, '/'),
+        );
         skippedCount++;
         continue;
       }
@@ -69,8 +83,11 @@ Future<void> generate(
 
       final result = await processor.process(asset.sourcePath, outputPath);
       if (result.success) {
-        await manifest.update(asset.sourcePath, outputPath);
         generatedAssets.add(asset.copyWith(runtimePath: relativeOut));
+        entries[asset.relativePath] = AssetEntry(
+          hash: asset.hash,
+          output: relativeOut,
+        );
         compiledCount++;
       } else {
         generatedAssets.add(asset.copyWith(runtimePath: relativeOut));
@@ -84,11 +101,18 @@ Future<void> generate(
     if (skippedCount > 0)
       stdout.writeln('Skipped (unchanged): $skippedCount file(s)');
     if (errorCount > 0) stderr.writeln('Errors: $errorCount file(s)');
-    await manifest.save();
-    assets
-      ..clear()
-      ..addAll(generatedAssets);
+  } else {
+    for (final asset in assets) {
+      generatedAssets.add(asset);
+      entries[asset.relativePath] = AssetEntry(hash: asset.hash);
+    }
   }
+
+  manifest.replace(entries);
+  await manifest.save();
+  assets
+    ..clear()
+    ..addAll(generatedAssets);
 
   final generator = DartGenerator(generateAllGetter: generateAllGetter);
   final dartCode = generator.generate(assets);
@@ -108,5 +132,16 @@ Future<void> generate(
   } else {
     stdout.writeln(
         'Skipped (unchanged): ${path.relative(outputPath, from: cwd.path)}');
+  }
+}
+
+Future<void> _deleteOutput(String? output, SvgProcessor processor) async {
+  if (output == null || !processor.isGeneratedOutput(output)) return;
+
+  final file = File(path.isAbsolute(output)
+      ? output
+      : path.join(Directory.current.path, output));
+  if (await file.exists()) {
+    await file.delete();
   }
 }

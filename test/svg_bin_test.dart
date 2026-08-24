@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:svg_bin/src/asset_scanner.dart';
 import 'package:svg_bin/src/config.dart';
+import 'package:svg_bin/src/create_bin.dart';
 import 'package:svg_bin/src/generator/dart_generator.dart';
+import 'package:svg_bin/src/models/manifest.dart';
 import 'package:svg_bin/src/processors/svg_processor.dart';
 import 'package:svg_bin/src/utils.dart';
 
@@ -141,5 +143,71 @@ svg_bin:
     ]);
     expect(code, contains("static const data = 'assets/data.json';"));
     expect(code, contains('IllustrationsAnimalsBirds get birds'));
+  });
+
+  test('diffs asset additions, changes, removals, and unchanged files',
+      () async {
+    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    addTearDown(() => root.delete(recursive: true));
+
+    final assets = Directory('${root.path}/assets');
+    await assets.create();
+    await File('${assets.path}/keep.png').writeAsBytes([1]);
+    await File('${assets.path}/changed.png').writeAsBytes([2]);
+
+    final scanner = AssetScanner(
+      assetPath: assets.path,
+      projectPath: root.path,
+      isExcluded: SvgProcessor().isGeneratedOutput,
+    );
+    final firstScan = await scanner.scan();
+    final manifest = await Manifest.load('${root.path}/generated');
+    manifest.replace({
+      for (final asset in firstScan)
+        asset.relativePath: AssetEntry(hash: asset.hash),
+      'removed.png':
+          const AssetEntry(hash: 'old', output: 'assets/x-bin/a.vec'),
+    });
+    await manifest.save();
+
+    await File('${assets.path}/changed.png').writeAsBytes([3]);
+    await File('${assets.path}/added.json').writeAsString('{}');
+    final diff = (await Manifest.load('${root.path}/generated'))
+        .diff(await scanner.scan());
+
+    expect(diff.added.keys, ['added.json']);
+    expect(diff.modified.keys, ['changed.png']);
+    expect(diff.unchanged.keys, ['keep.png']);
+    expect(diff.removed.keys, ['removed.png']);
+  });
+
+  test('deletes generated output for removed assets', () async {
+    final root = await Directory.systemTemp.createTemp('svg_bin_test_');
+    addTearDown(() => root.delete(recursive: true));
+
+    final assets = Directory('${root.path}/assets');
+    final generated = Directory('${assets.path}/icons-bin');
+    await generated.create(recursive: true);
+    await File('${assets.path}/logo.png').writeAsBytes([0]);
+    final staleOutput = File('${generated.path}/old.svg.vec');
+    await staleOutput.writeAsBytes([0]);
+
+    final outputPath = '${root.path}/lib/app_asset.dart';
+    final manifest = await Manifest.load(File(outputPath).parent.path);
+    manifest.replace({
+      'icons/old.svg': AssetEntry(
+        hash: 'old',
+        output: staleOutput.path,
+      ),
+    });
+    await manifest.save();
+
+    await generate(
+      outputPath,
+      inputPath: assets.path,
+      transformSvgToVec: false,
+    );
+
+    expect(await staleOutput.exists(), isFalse);
   });
 }

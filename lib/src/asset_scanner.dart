@@ -29,7 +29,7 @@ class AssetScanner {
         sourcePath: entity.path,
         relativePath: relativePath,
         type: path.extension(entity.path).toLowerCase(),
-        hash: await sha256.bind(entity.openRead()).first.toString(),
+        hash: (await sha256.bind(entity.openRead()).first).toString(),
         runtimePath: _runtimePath(entity.path),
       ));
     }
