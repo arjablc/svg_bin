@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:svg_bin/src/models/asset.dart';
+import 'package:path_gen/src/models/asset.dart';
 
 abstract class ResourceProcessor {
   String get id;

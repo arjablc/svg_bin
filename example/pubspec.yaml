@@ -1,5 +1,5 @@
-name: svg_bin_example
-description: Example project demonstrating svg_bin usage
+name: path_gen_example
+description: Example project demonstrating path_gen usage
 
 publish_to: 'none'
 
@@ -12,25 +12,23 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  svg_bin:
+  path_gen:
     path: ../
-  vector_graphics: ^1.1.18
+  flutter_svg: ^2.2.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-svg_bin:
+path_gen:
   input: assets
   output: lib/assets
   generate_all_getter: true
-  transform_svg_to_vec: true
+  transform_svg_to_vec: false
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/icons-bin/
-    - assets/icons-bin/st-icons/
-    - assets/icons-bin/nav_icons/
+    - assets/icons/

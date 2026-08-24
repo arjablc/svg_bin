@@ -1,17 +1,19 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:svg_bin/src/asset_scanner.dart';
-import 'package:svg_bin/src/generator/dart_generator.dart';
-import 'package:svg_bin/src/models/asset.dart';
-import 'package:svg_bin/src/models/manifest.dart';
-import 'package:svg_bin/src/processors/svg_processor.dart';
+import 'package:path_gen/src/asset_scanner.dart';
+import 'package:path_gen/src/flutter_assets.dart';
+import 'package:path_gen/src/generator/dart_generator.dart';
+import 'package:path_gen/src/models/asset.dart';
+import 'package:path_gen/src/models/manifest.dart';
+import 'package:path_gen/src/processors/svg_processor.dart';
 
 Future<void> generate(
   String outputPath, {
   String inputPath = 'assets',
   bool generateAllGetter = false,
   bool transformSvgToVec = true,
+  bool updateFlutterAssets = true,
   bool force = false,
 }) async {
   final cwd = Directory.current;
@@ -37,6 +39,10 @@ Future<void> generate(
   ).scan();
 
   if (assets.isEmpty) {
+    if (transformSvgToVec && updateFlutterAssets) {
+      await syncFlutterAssets(
+          File(path.join(cwd.path, 'pubspec.yaml')), const []);
+    }
     stdout.writeln('No assets found.');
     return;
   }
@@ -115,6 +121,14 @@ Future<void> generate(
 
   manifest.replace(entries);
   await manifest.save();
+  if (transformSvgToVec && updateFlutterAssets) {
+    await syncFlutterAssets(
+      File(path.join(cwd.path, 'pubspec.yaml')),
+      flutterAssetDirectories(
+        entries.values.map((entry) => entry.output).whereType<String>(),
+      ),
+    );
+  }
   assets
     ..clear()
     ..addAll(generatedAssets);
@@ -138,6 +152,7 @@ Future<void> generate(
     stdout.writeln(
         'Skipped (unchanged): ${path.relative(outputPath, from: cwd.path)}');
   }
+  stdout.writeln('Done.');
 }
 
 ResourceProcessor? _processorFor(

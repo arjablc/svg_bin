@@ -1,6 +1,6 @@
-# SVG Bin Example
+# Path Gen Example
 
-This example demonstrates recursive SVG asset generation and rendering compiled `.vec` files in Flutter.
+This example demonstrates recursive asset-path generation in Flutter. It uses `flutter_svg` to render the generated SVG paths.
 
 ## Project Structure
 
@@ -29,9 +29,9 @@ example/
    flutter pub get
    ```
 
-2. Generate the `.vec` files and asset classes:
+2. Generate the asset classes:
    ```bash
-   dart run svg_bin
+   dart run path_gen
    ```
 
 3. Run the app:
@@ -55,21 +55,21 @@ The package automatically normalizes folder and file names to proper Dart naming
 ## Usage in Code
 
 ```dart
-import 'package:svg_bin/svg_bin.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'assets/app_asset.dart';
 
 // Basic usage
-SvgBin(AppAsset.icons.star)
+SvgPicture.asset(AppAsset.icons.star)
 
 // With size
-SvgBin(
+SvgPicture.asset(
   AppAsset.icons.stIcons.homeIcon,
   width: 32,
   height: 32,
 )
 
 // With color filter
-SvgBin(
+SvgPicture.asset(
   AppAsset.icons.star,
   width: 32,
   height: 32,
