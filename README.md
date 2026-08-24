@@ -12,6 +12,15 @@ and the Flutter guide for
 -->
 
 
+> [!WARNING]
+> This package started as one off util and I decided I should publish it to pub.dev, at that time I was only concerned with 
+> compiling vectors and then generating the app assets dart file with file paths.
+> With time I wanted something more than that, and the name svg_bin won't do it any justice. 
+> I am moving to a new package on pub.dev. Come along to path_gen
+>
+> This package is discontinued and will no longer receive updates or support. Please avoid using it in new projects.
+> 
+
 # SVG_BIN
 A helper Flutter package that converts your `.svg` files to binary with the extension `.vec` using `vector_graphics_compiler` and provides a widget to render those .vec files using `vector_graphics` package.
 - [vector_graphics_compiler](https://pub.dev/packages/vector_graphics_compiler)
