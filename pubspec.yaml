@@ -1,11 +1,13 @@
-name: svg_bin
-description: "A flutter pacakge that compiles your svg to vec and helps display vec"
+name: path_gen
+description: "All in one generator for your asset paths with support to transform .svg to .vec(opt-in)."
+repository: https://github.com/arjablc/path_gen
+issue_tracker: https://github.com/arjablc/path_gen/issues
 
-version: 0.4.1
-
-repository: https://github.com/arjablc/svg_bin
-issue_tracker: https://github.com/arjablc/svg_bin/issues
-homepage:
+version: 1.4.1
+topics:
+  - asset
+  - generation
+  - vector
 
 environment:
   sdk: ^3.6.0
