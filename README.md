@@ -49,28 +49,31 @@ dart run svg_bin
 ## Usage
 
 **Currently this supports only one input directory which will be `/assets` in your Flutter root.**
-- Rename your assets to be in the following format:
+- Organize assets by folder and category:
 ```
-assets/subfolder/category_name-asset_name.svg
+assets/icons/post/ico1.svg
+assets/icons/post/ico3.svg
 ```
-- This will generate the main asset class, the sub folder class and the category name class, with String getters that will have the actual path of the asset.
+- This generates nested asset getters and an `all` getter for each category.
 - Make sure you have imported the bin folders into the `pubspec.yml` of your flutter project. (Don't want to mess with yml just yet).
 - Then just do `dart run svg_bin` at root of your flutter project.
 - To use the `.vec` assets use the `SvgBin()` widget
 - **For the love of god** don't make your category or folder name same as some of the inbuilt classes in Dart and Flutter.
 
-for a asset like 
+For assets like:
 ```
-assets/icons/finance-money.svg
+assets/icons/post/ico1.svg
+assets/icons/post/ico3.svg
 ```
 after running the command
 ```dart
 SvgBin(
-    AppAsset.icons.finance.money,
+  AppAsset.icons.post.ico1,
 )
+
+final postIcons = AppAsset.icons.post.all;
 ```
 
 ## Additional information
 
 Very special thanks to [Avishek Subedi](https://github.com/Avishek-Subedi) dai.
-

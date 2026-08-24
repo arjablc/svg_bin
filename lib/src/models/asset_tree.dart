@@ -69,7 +69,8 @@ class AssetTree {
     }
 
     final folders = <AssetFolder>[];
-    final topLevelEntities = await dir.list().toList();
+    final topLevelEntities = await dir.list().toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
 
     // Check for nested svg subdirectory pattern
     // e.g., assets/hello/svg, assets/bro/svg → unified Svg class
@@ -158,7 +159,8 @@ class AssetTree {
     for (final nested in nestedDirs) {
       final files = <AssetFile>[];
       final svgDir = Directory(nested.svgDirPath);
-      final entities = await svgDir.list().toList();
+      final entities = await svgDir.list().toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
 
       for (final entity in entities) {
         if (entity is! File) continue;
@@ -203,7 +205,8 @@ class AssetTree {
     final files = <AssetFile>[];
     final categories = <AssetCategory>[];
 
-    final entities = await dir.list().toList();
+    final entities = await dir.list().toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
 
     for (final entity in entities) {
       final entityName = path.basename(entity.path);
@@ -249,7 +252,8 @@ class AssetTree {
     final categoryName = path.basename(dir.path);
     final files = <AssetFile>[];
 
-    final entities = await dir.list().toList();
+    final entities = await dir.list().toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
 
     for (final entity in entities) {
       if (entity is! File) continue;
