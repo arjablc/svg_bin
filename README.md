@@ -11,7 +11,6 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
 
-
 # Path Gen
 
 `path_gen` generates typed Dart asset paths from your asset directories. It can also compile SVG files to `.vec` with [`vector_graphics_compiler`](https://pub.dev/packages/vector_graphics_compiler).
@@ -89,6 +88,3 @@ final postIcons = AppAsset.icons.post.all;
 
 Like `flutter_gen`, `path_gen` generates typed asset paths. Unlike `flutter_gen`, it runs as a command when you choose, uses no `build_runner`, and can optionally compile SVG files to `.vec`.
 
-## Additional information
-
-Very special thanks to [Avishek Subedi](https://github.com/Avishek-Subedi) dai.
