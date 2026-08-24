@@ -1,0 +1,36 @@
+{
+  "version": "2.0",
+  "generated_at": "2026-08-25T01:08:10.485351",
+  "assets": {
+    "icons/nav_icons/arrow-left.svg": {
+      "hash": "637c55e34f1dd7008bea5333abe0e515d0b9d5aaf52060834b7f63969332b5dc",
+      "output": null,
+      "processor": null,
+      "processor_version": null
+    },
+    "icons/nav_icons/arrow_right.svg": {
+      "hash": "6754bf6aef45a3f8d199dd2eeb7dcbd6473fe961ced2c4a9a4537d8f3d62ea87",
+      "output": null,
+      "processor": null,
+      "processor_version": null
+    },
+    "icons/st-icons/home-icon.svg": {
+      "hash": "f34ccb881f1ef5fbcff5e6460a9aa4bc98346a6a79c6c40dd33ea0c3a0f72ac4",
+      "output": null,
+      "processor": null,
+      "processor_version": null
+    },
+    "icons/st-icons/settings_icon.svg": {
+      "hash": "d98ad153459b3ac1471aa890e551d306761452db863faf3aa4c2af9ee0a41bbd",
+      "output": null,
+      "processor": null,
+      "processor_version": null
+    },
+    "icons/star.svg": {
+      "hash": "da9b28912478affe572eaee7f5c807362295fa59df87a87d91b1186fa3bdb9e5",
+      "output": null,
+      "processor": null,
+      "processor_version": null
+    }
+  }
+}

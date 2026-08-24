@@ -1,202 +1,196 @@
-/// the main function that handles generating
-///
-/// the vecs and the file
-library;
-
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:svg_bin/src/utils.dart';
+import 'package:path_gen/src/asset_scanner.dart';
+import 'package:path_gen/src/flutter_assets.dart';
+import 'package:path_gen/src/generator/dart_generator.dart';
+import 'package:path_gen/src/models/asset.dart';
+import 'package:path_gen/src/models/manifest.dart';
+import 'package:path_gen/src/processors/svg_processor.dart';
 
-Future<void> generate(String outputPath) async {
+Future<void> generate(
+  String outputPath, {
+  String inputPath = 'assets',
+  bool generateAllGetter = false,
+  bool transformSvgToVec = true,
+  bool updateFlutterAssets = true,
+  bool force = false,
+}) async {
   final cwd = Directory.current;
-  final assetFolder = 'assets';
-  final lineTerm = Platform.lineTerminator;
-
-  final assetPath = path.join(cwd.path, assetFolder);
-
+  final assetPath = path.normalize(
+    path.isAbsolute(inputPath) ? inputPath : path.join(cwd.path, inputPath),
+  );
   final assetDir = Directory(assetPath);
 
-  // checks if the assets folder is present or not
-  if (await assetDir.exists() == false) {
-    stdout.writeln("Plese put assets into /assets folder at root of project");
+  if (!await assetDir.exists()) {
+    stdout.writeln('Input directory not found: $inputPath');
+    return;
   }
 
-  final folderFileMap = <String, Map<String, String>>{};
-  final subEntityList = assetDir.listSync(recursive: true, followLinks: false);
-  for (var fsEnitity in subEntityList) {
-    // this is the parent folder of the files
-    final folderPath = fsEnitity.parent.path;
+  stdout.writeln('Scanning assets...');
+  final svgProcessor = SvgProcessor();
+  final processors = transformSvgToVec
+      ? <ResourceProcessor>[svgProcessor]
+      : <ResourceProcessor>[];
+  final assets = await AssetScanner(
+    assetPath: assetPath,
+    projectPath: cwd.path,
+    isExcluded: svgProcessor.isGeneratedOutput,
+  ).scan();
 
-    final entityStat = fsEnitity.statSync();
-
-    // if the entity is not a file then don't run
-    if (entityStat.type != FileSystemEntityType.file) continue;
-
-    final fileBase = path.basename(fsEnitity.path);
-
-    // Don't run the parser if file is other than SVG,
-    // TODO: introduce a flag to enable ttfs
-    if (!fileBase.endsWith('.svg')) continue;
-
-    final folderBase = path.basename(folderPath);
-
-    // if the folder is already generated one then continue
-    if (folderPath.endsWith('bin')) continue;
-
-    //
-    final binFolderPath = '$folderPath-bin';
-
-    //
-    final binFolderDir = Directory(binFolderPath);
-
-    // Now the 'something-bin' folder is created
-    if (!binFolderDir.existsSync()) binFolderDir.createSync();
-
-    final binFileBase = '$fileBase.vec';
-
-    // populate the folder file map
-    final currentFolderFileMap =
-        folderFileMap.putIfAbsent(folderBase, () => {});
-
-    currentFolderFileMap[fileBase] = 'assets/$folderBase-bin/$binFileBase';
-
-    //INFO: Now comes the part where you conver the svgs into vec files
-    stdout.writeln("Converting $folderBase/$fileBase -> $binFileBase");
-
-    // runs this is the home directory
-    final result = await Process.run('dart', [
-      'run',
-      'vector_graphics_compiler',
-      '-i',
-      path.join(folderPath, fileBase),
-      '-o',
-      path.join(binFolderPath, binFileBase),
-    ]);
-    stderr.write(result.stderr);
+  if (assets.isEmpty) {
+    if (transformSvgToVec && updateFlutterAssets) {
+      await syncFlutterAssets(
+          File(path.join(cwd.path, 'pubspec.yaml')), const []);
+    }
+    stdout.writeln('No assets found.');
+    return;
   }
 
-  Map<String, String> catCache = {};
+  final manifest = await Manifest.load(File(outputPath).parent.path);
+  final diff = manifest.diff(assets);
+  for (final entry in diff.removed.values) {
+    await _deleteOutput(entry.output, [svgProcessor]);
+  }
 
-  //INFO: Now the dart file generation
-  final fileBuffer = StringBuffer()
-    ..writeln('//WARN: Generated File Don\'t edit by hand')
-    ..writeln()
-    ..write(addAssetClassBuffer(folderFileMap))
-    ..writeln()
-    ..writeAll(
-      folderFileMap.keys.map(
-        (folder) {
-          final className = Utils.kebabToPascalCase(folder);
-          final folderClassBuff = StringBuffer('final class $className {')
-            ..writeln()
-            ..writeln('const $className ();')
-            ..writeAll(
-              folderFileMap[folder]!.entries.map(
-                (e) {
-                  final assetName = e.key.split('.').first;
-                  final containsCat = assetName.contains('-');
-                  final assetNameCamel = Utils.snakeToCamelCase(assetName);
-                  if (!containsCat) {
-                    return "String get $assetNameCamel => '${e.value}'; $lineTerm";
-                  }
-                  return '';
-                },
-              ),
-            )
+  final generatedAssets = <Asset>[];
+  final entries = <String, AssetEntry>{};
+  var compiledCount = 0;
+  var skippedCount = 0;
+  var errorCount = 0;
+  for (final asset in assets) {
+    final processor = _processorFor(asset, processors);
+    final previous = manifest[asset.relativePath];
+    if (processor == null) {
+      await _deleteOutput(previous?.output, [svgProcessor]);
+      generatedAssets.add(asset);
+      entries[asset.relativePath] = AssetEntry(hash: asset.hash);
+      continue;
+    }
 
-            // category instance names
-            ..writeAll(folderFileMap[folder]!.entries.map((e) {
-              final lineTerm = Platform.lineTerminator;
-              final assetName = e.key.split('.').first;
-              if (!assetName.contains('-')) return '';
-              final assetCategory = assetName.split('-').first;
-              if (catCache.containsKey(assetCategory)) {
-                return '';
-              } else {
-                catCache[assetCategory] = 'idk_what_i_am_doing';
-                final assetCatPascal = Utils.snakeTOPascalCase(assetCategory);
-                final assetCatCamel = Utils.snakeToCamelCase(assetCategory);
+    final outputPath = processor.outputFor(asset);
+    final runtimeOutput = path
+        .relative(outputPath, from: cwd.path)
+        .replaceAll(path.separator, '/');
+    if (previous?.output != null && previous!.output != runtimeOutput) {
+      await _deleteOutput(previous.output, [svgProcessor]);
+    }
+    if (!needsProcessing(
+      asset: asset,
+      previous: previous,
+      processor: processor,
+      runtimeOutput: runtimeOutput,
+      force: force,
+    )) {
+      generatedAssets.add(asset.copyWith(runtimePath: runtimeOutput));
+      entries[asset.relativePath] = AssetEntry(
+        hash: asset.hash,
+        output: runtimeOutput,
+        processor: processor.id,
+        processorVersion: processor.version,
+      );
+      skippedCount++;
+      continue;
+    }
 
-                return '$assetCatPascal get $assetCatCamel => $assetCatPascal(); $lineTerm';
-              }
-            }))
-            ..writeln('}')
-            ..write(addCategoryClassBuffer(folderFileMap[folder]!));
+    final relativeSrc = path.relative(asset.sourcePath, from: cwd.path);
+    stdout.writeln('Compiling: $relativeSrc -> $runtimeOutput');
+    final result = await processor.process(asset.sourcePath, outputPath);
+    if (result.success) {
+      generatedAssets.add(asset.copyWith(runtimePath: runtimeOutput));
+      entries[asset.relativePath] = AssetEntry(
+        hash: asset.hash,
+        output: runtimeOutput,
+        processor: processor.id,
+        processorVersion: processor.version,
+      );
+      compiledCount++;
+    } else {
+      generatedAssets.add(asset.copyWith(runtimePath: runtimeOutput));
+      stderr.writeln('  Error: ${result.error}');
+      errorCount++;
+    }
+  }
 
-          return folderClassBuff;
-        },
+  stdout.writeln();
+  if (compiledCount > 0) stdout.writeln('Compiled: $compiledCount file(s)');
+  if (skippedCount > 0) {
+    stdout.writeln('Skipped (unchanged): $skippedCount file(s)');
+  }
+  if (errorCount > 0) stderr.writeln('Errors: $errorCount file(s)');
+
+  manifest.replace(entries);
+  await manifest.save();
+  if (transformSvgToVec && updateFlutterAssets) {
+    await syncFlutterAssets(
+      File(path.join(cwd.path, 'pubspec.yaml')),
+      flutterAssetDirectories(
+        entries.values.map((entry) => entry.output).whereType<String>(),
       ),
     );
+  }
+  assets
+    ..clear()
+    ..addAll(generatedAssets);
 
-  await File(outputPath).writeAsString(fileBuffer.toString());
+  final generator = DartGenerator(generateAllGetter: generateAllGetter);
+  final dartCode = generator.generate(assets);
+
+  final dartFile = File(outputPath);
+  final dartDir = dartFile.parent;
+  if (!await dartDir.exists()) {
+    await dartDir.create(recursive: true);
+  }
+
+  // Only write if content has changed
+  final existingContent =
+      await dartFile.exists() ? await dartFile.readAsString() : null;
+  if (existingContent != dartCode) {
+    await dartFile.writeAsString(dartCode);
+    stdout.writeln('Generated: ${path.relative(outputPath, from: cwd.path)}');
+  } else {
+    stdout.writeln(
+        'Skipped (unchanged): ${path.relative(outputPath, from: cwd.path)}');
+  }
+  stdout.writeln('Done.');
 }
 
-StringBuffer addCategoryClassBuffer(Map<String, String> map) {
-  final lineTerm = Platform.lineTerminator;
-  Map<String, String> catMap = {};
-  final buff = StringBuffer()
-    ..writeAll(
-      map.entries.map(
-        (e) {
-          final fullAssetName = e.key;
-          final bool containsCat = fullAssetName.contains('-');
-          if (containsCat) {
-            final split = fullAssetName.split('-');
-            final categoryName = split.first;
-            if (catMap.containsKey(categoryName)) return '';
-            catMap[categoryName] = 'i_am_beginner';
-            return StringBuffer()
-              ..writeln(
-                  'final class ${Utils.snakeTOPascalCase(categoryName)} {')
-              //..writeln(
-              //    'const ${Utils.snakeTOPascalCase(categoryName)} (); $lineTerm')
-              ..writeAll(
-                map.entries.map(
-                  (e) {
-                    final assetCatSplit = e.key.split('.');
-                    final currenCatName = assetCatSplit.first.split('-').first;
-                    if (currenCatName != categoryName) return '';
-                    final assetName = assetCatSplit.first.split('-').last;
-                    final assetNameCamel = Utils.snakeToCamelCase(assetName);
-                    return "String get $assetNameCamel => '${e.value}'; $lineTerm";
-                  },
-                ),
-              )
-              ..writeln('List<String>  get all => [')
-              ..writeAll(
-                map.entries.map(
-                  (e) {
-                    final assetCatSplit = e.key.split('.');
-                    final currenCatName = assetCatSplit.first.split('-').first;
-                    if (currenCatName != categoryName) return '';
-                    final assetName = assetCatSplit.first.split('-').last;
-                    final assetNameCamel = Utils.snakeToCamelCase(assetName);
-                    return "$assetNameCamel,";
-                  },
-                ),
-              )
-              ..writeln('];')
-              ..writeln('}');
-          }
-          return '';
-        },
-      ),
-    );
-  return buff;
+ResourceProcessor? _processorFor(
+  Asset asset,
+  Iterable<ResourceProcessor> processors,
+) {
+  for (final processor in processors) {
+    if (processor.supports(asset)) return processor;
+  }
+  return null;
 }
 
-StringBuffer addAssetClassBuffer(Map<String, Map<String, String>> map) {
-  final lineTerm = Platform.lineTerminator;
-  return StringBuffer()
-    ..write('final class AppAsset {')
-    ..writeAll(map.keys.map((key) {
-      final className = Utils.kebabToPascalCase(key);
-      final classInstanceName = Utils.kebabToCamelCase(key);
+bool needsProcessing({
+  required Asset asset,
+  required AssetEntry? previous,
+  required ResourceProcessor processor,
+  required String runtimeOutput,
+  required bool force,
+}) =>
+    force ||
+    previous == null ||
+    previous.hash != asset.hash ||
+    previous.output != runtimeOutput ||
+    previous.processor != processor.id ||
+    previous.processorVersion != processor.version;
 
-      // INFO: static const className = ClassName();
-      return '\t static const $classInstanceName = $className() ; $lineTerm';
-    }))
-    ..writeln()
-    ..writeln('}');
+Future<void> _deleteOutput(
+  String? output,
+  Iterable<ResourceProcessor> processors,
+) async {
+  if (output == null || !processors.any((p) => p.isGeneratedOutput(output))) {
+    return;
+  }
+
+  final file = File(path.isAbsolute(output)
+      ? output
+      : path.join(Directory.current.path, output));
+  if (await file.exists()) {
+    await file.delete();
+  }
 }
