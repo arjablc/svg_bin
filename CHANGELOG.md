@@ -1,3 +1,8 @@
+## 0.4.1
+Fix: Generate category assets in a stable order so `all` is deterministic.
+Docs: Document category directories and category `all` getters.
+Test: Cover nested category asset generation.
+
 ## 0.4.0
 Feat: Universal casing normalization for generated classes.
     - Class names are now properly normalized to PascalCase

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:args/args.dart' show ArgParser, ArgResults;
+import 'package:path/path.dart' as path;
+import 'package:svg_bin/src/config.dart';
 import 'package:svg_bin/src/constants.dart';
 import 'package:svg_bin/src/create_bin.dart';
 import 'package:svg_bin/src/enums.dart';
@@ -23,7 +25,6 @@ Future<void> main(List<String> args) async {
       ArgsEnum.output.name,
       abbr: ArgsEnum.output.abbr,
       help: ArgsEnum.output.help,
-      defaultsTo: "$defaultAssetFolder$defaultAssetFile",
     );
 
   final ArgResults results;
@@ -46,7 +47,9 @@ Future<void> main(List<String> args) async {
 
   stdout.write(intro);
 
-  final outDir = results.option(ArgsEnum.output.name)!;
+  final config = await SvgBinConfig.load(Directory.current);
+  final outDir = results.option(ArgsEnum.output.name) ??
+      path.join(config.output, defaultAssetFile);
   final force = results.flag('force');
 
   final outputDir = File(outDir).parent;
@@ -54,5 +57,11 @@ Future<void> main(List<String> args) async {
     outputDir.createSync(recursive: true);
   }
 
-  await generate(outDir, force: force);
+  await generate(
+    outDir,
+    inputPath: config.input,
+    generateAllGetter: config.generateAllGetter,
+    transformSvgToVec: config.transformSvgToVec,
+    force: force,
+  );
 }
