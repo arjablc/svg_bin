@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
+import 'package:svg_bin/src/asset_scanner.dart';
 import 'package:svg_bin/src/generator/dart_generator.dart';
-import 'package:svg_bin/src/models/asset_tree.dart';
+import 'package:svg_bin/src/models/asset.dart';
 import 'package:svg_bin/src/models/manifest.dart';
 import 'package:svg_bin/src/processors/svg_processor.dart';
 
@@ -25,40 +26,54 @@ Future<void> generate(
   }
 
   stdout.writeln('Scanning assets...');
-  final tree = await AssetTree.buildFromDirectory(
-    assetPath,
-    transformSvgToVec: transformSvgToVec,
-  );
+  final processor = SvgProcessor();
+  final assets = await AssetScanner(
+    assetPath: assetPath,
+    projectPath: cwd.path,
+    isExcluded: processor.isGeneratedOutput,
+  ).scan();
 
-  if (tree.folders.isEmpty) {
+  if (assets.isEmpty) {
     stdout.writeln('No assets found.');
     return;
   }
 
   if (transformSvgToVec) {
     final manifest = await Manifest.load(File(outputPath).parent.path);
-    final processor = SvgProcessor();
+    final generatedAssets = <Asset>[];
     var compiledCount = 0;
     var skippedCount = 0;
     var errorCount = 0;
 
-    for (final file in tree.allFiles) {
+    for (final asset in assets) {
+      if (!processor.supports(asset)) {
+        generatedAssets.add(asset);
+        continue;
+      }
+      final outputPath = processor.outputFor(asset);
       final needsCompile =
-          force || await manifest.needsRecompile(file.sourcePath);
+          force || await manifest.needsRecompile(asset.sourcePath);
       if (!needsCompile) {
+        generatedAssets.add(asset.copyWith(
+          runtimePath: path
+              .relative(outputPath, from: cwd.path)
+              .replaceAll(path.separator, '/'),
+        ));
         skippedCount++;
         continue;
       }
 
-      final relativeSrc = path.relative(file.sourcePath, from: cwd.path);
-      final relativeOut = path.relative(file.outputPath, from: cwd.path);
+      final relativeSrc = path.relative(asset.sourcePath, from: cwd.path);
+      final relativeOut = path.relative(outputPath, from: cwd.path);
       stdout.writeln('Compiling: $relativeSrc -> $relativeOut');
 
-      final result = await processor.process(file.sourcePath, file.outputPath);
+      final result = await processor.process(asset.sourcePath, outputPath);
       if (result.success) {
-        await manifest.update(file.sourcePath, file.outputPath);
+        await manifest.update(asset.sourcePath, outputPath);
+        generatedAssets.add(asset.copyWith(runtimePath: relativeOut));
         compiledCount++;
       } else {
+        generatedAssets.add(asset.copyWith(runtimePath: relativeOut));
         stderr.writeln('  Error: ${result.error}');
         errorCount++;
       }
@@ -70,10 +85,13 @@ Future<void> generate(
       stdout.writeln('Skipped (unchanged): $skippedCount file(s)');
     if (errorCount > 0) stderr.writeln('Errors: $errorCount file(s)');
     await manifest.save();
+    assets
+      ..clear()
+      ..addAll(generatedAssets);
   }
 
   final generator = DartGenerator(generateAllGetter: generateAllGetter);
-  final dartCode = generator.generate(tree);
+  final dartCode = generator.generate(assets);
 
   final dartFile = File(outputPath);
   final dartDir = dartFile.parent;

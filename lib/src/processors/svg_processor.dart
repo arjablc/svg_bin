@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
+import 'package:svg_bin/src/models/asset.dart';
 
 abstract class ResourceProcessor {
   String get inputExtension;
@@ -27,6 +28,29 @@ class SvgProcessor implements ResourceProcessor {
   @override
   String get outputExtension => '.vec';
 
+  bool supports(Asset asset) => asset.type == inputExtension;
+
+  String outputFor(Asset asset) {
+    final segments = path.split(asset.relativePath);
+    final sourceRoot = segments.length == 1
+        ? path.dirname(asset.sourcePath)
+        : List<String>.filled(segments.length - 1, '')
+            .fold(asset.sourcePath, (root, _) => path.dirname(root));
+    final outputRoot = path.join(
+      path.dirname(sourceRoot),
+      '${path.basename(sourceRoot)}-bin',
+    );
+
+    return path.joinAll([
+      outputRoot,
+      if (segments.length > 2) ...segments.sublist(1, segments.length - 1),
+      '${path.basename(asset.relativePath)}$outputExtension',
+    ]);
+  }
+
+  bool isGeneratedOutput(String relativePath) =>
+      path.split(relativePath).any((part) => part.endsWith('-bin'));
+
   @override
   Future<ProcessResult> process(String inputPath, String outputPath) async {
     final outputDir = Directory(path.dirname(outputPath));
@@ -46,7 +70,9 @@ class SvgProcessor implements ResourceProcessor {
     if (result.exitCode != 0) {
       final error = result.stderr.toString().trim();
       return ProcessResult.failed(
-        error.isNotEmpty ? error : 'Compilation failed with exit code ${result.exitCode}',
+        error.isNotEmpty
+            ? error
+            : 'Compilation failed with exit code ${result.exitCode}',
       );
     }
 
