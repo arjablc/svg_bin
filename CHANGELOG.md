@@ -1,3 +1,7 @@
+## Unreleased
+Feat: Scan recursive mixed asset directories and generate arbitrary-depth APIs.
+Feat: Track all assets in a relative-path manifest and remove stale compiled output.
+
 ## 0.4.1
 Fix: Generate category assets in a stable order so `all` is deterministic.
 Docs: Document category directories and category `all` getters.

@@ -22,20 +22,15 @@ and the Flutter guide for
 > 
 
 # SVG_BIN
-A helper Flutter package that converts your `.svg` files to binary with the extension `.vec` using `vector_graphics_compiler` and provides a widget to render those .vec files using `vector_graphics` package.
+A Flutter asset generator that optionally converts SVG files to `.vec` with `vector_graphics_compiler` and generates typed asset paths.
 - [vector_graphics_compiler](https://pub.dev/packages/vector_graphics_compiler)
 - [vector_graphics](https://pub.dev/packages/vector_graphics)
-### Note: **Under Construction**
-
 ## Features
 - [x] generate .vec files
-- [x] generate asset class
-    - [x] folder asset class
-    - [x] category class
-- [x] caching: only recompiles changed SVGs (hash-based manifest)
+- [x] generate asset classes for arbitrary directory depth
+- [x] scan raw assets such as PNG, JPEG, JSON, and SVG
+- [x] cache the full asset pipeline with a hash-based manifest
 - [x] configure input and generated Dart directories in `pubspec.yaml`
-- [x] separate converting files and creating the dart file
-- [ ] separate the bin folders out of the asset folder
 
 
 
@@ -57,7 +52,7 @@ dart run svg_bin
 
 ## Usage
 
-Configure the source SVG and generated Dart directories in the consumer app's `pubspec.yaml`:
+Configure the source asset and generated Dart directories in the consumer app's `pubspec.yaml`:
 
 ```yaml
 svg_bin:
@@ -67,18 +62,18 @@ svg_bin:
   transform_svg_to_vec: true
 ```
 
-Both paths are relative to the app root. The generated file is `app_asset.dart` in the configured output directory. `generate_all_getter` is opt-in and adds a direct-files-only `List<String> get all` to generated classes. Set `transform_svg_to_vec` to `false` to skip `.vec` compilation and generate paths to the source SVG files instead; those paths cannot be rendered with `SvgBin`.
+Both paths are relative to the app root. The generated file is `app_asset.dart` in the configured output directory. `generate_all_getter` adds a direct-files-only `List<String> get all` to generated classes.
 
-- Organize assets by folder and category:
+Assets are scanned recursively. Raw files such as PNG, JPEG, and JSON are used directly. With `transform_svg_to_vec: true`, SVG output is written to a sibling `*-bin` directory and must be declared in the app's `flutter.assets`; those generated directories are excluded from scanning. Set it to `false` to use raw SVG paths instead. `SvgBin` only renders compiled `.vec` paths.
+
+For example:
 ```
+assets/illustrations/animals/birds/eagle.png
 assets/icons/post/ico1.svg
-assets/icons/post/ico3.svg
 ```
-- This generates nested asset getters and an `all` getter for each category.
-- Make sure you have imported the bin folders into the `pubspec.yml` of your flutter project. (Don't want to mess with yml just yet).
-- Then just do `dart run svg_bin` at root of your flutter project.
-- To use the `.vec` assets use the `SvgBin()` widget
-- **For the love of god** don't make your category or folder name same as some of the inbuilt classes in Dart and Flutter.
+generates `AppAsset.illustrations.animals.birds.eagle` and `AppAsset.icons.post.ico1`.
+
+Then run `dart run svg_bin` at the app root. Make sure generated `*-bin` directories are included under `flutter.assets` when SVG compilation is enabled.
 
 For assets like:
 ```

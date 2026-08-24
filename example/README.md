@@ -1,6 +1,6 @@
 # SVG Bin Example
 
-This example demonstrates how to use the `svg_bin` package to convert SVG files to binary `.vec` format and display them in a Flutter app.
+This example demonstrates recursive SVG asset generation and rendering compiled `.vec` files in Flutter.
 
 ## Project Structure
 
@@ -9,10 +9,10 @@ example/
 ├── assets/
 │   └── icons/
 │       ├── star.svg              # Root level icon
-│       ├── st-icons/             # Kebab-case category folder
+│       ├── st-icons/             # Kebab-case nested folder
 │       │   ├── home-icon.svg
 │       │   └── settings_icon.svg
-│       └── nav_icons/            # Snake_case category folder
+│       └── nav_icons/            # Snake_case nested folder
 │           ├── arrow-left.svg
 │           └── arrow_right.svg
 ├── lib/
