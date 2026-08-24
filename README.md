@@ -24,7 +24,7 @@ A helper Flutter package that converts your `.svg` files to binary with the exte
     - [x] folder asset class
     - [x] category class
 - [x] caching: only recompiles changed SVGs (hash-based manifest)
-- [x] add args parser to change assets directory (input) and assets class directory(output)
+- [x] configure input and generated Dart directories in `pubspec.yaml`
 - [x] separate converting files and creating the dart file
 - [ ] separate the bin folders out of the asset folder
 
@@ -42,13 +42,24 @@ flutter pub add svg_bin
 ``` bash
 dart run svg_bin
 ```
-- The `AppAsset` class is generated inside `/lib/src/core/app_assets/assets.dart` (adding custom path is on the agenda)
+- The `AppAsset` class is generated inside `/lib/assets/app_asset.dart` by default.
 - Render the .vec with the `SvgBin()` widget
 
 
 ## Usage
 
-**Currently this supports only one input directory which will be `/assets` in your Flutter root.**
+Configure the source SVG and generated Dart directories in the consumer app's `pubspec.yaml`:
+
+```yaml
+svg_bin:
+  input: assets
+  output: lib/assets
+  generate_all_getter: false
+  transform_svg_to_vec: true
+```
+
+Both paths are relative to the app root. The generated file is `app_asset.dart` in the configured output directory. `generate_all_getter` is opt-in and adds a direct-files-only `List<String> get all` to generated classes. Set `transform_svg_to_vec` to `false` to skip `.vec` compilation and generate paths to the source SVG files instead; those paths cannot be rendered with `SvgBin`.
+
 - Organize assets by folder and category:
 ```
 assets/icons/post/ico1.svg
