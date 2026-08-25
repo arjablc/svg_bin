@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2
+
+- Fixed generated `flutter.assets` entries: every directory containing outputs under a `*-bin/` tree is now registered, including nested ones.
+
 ## 1.4.1
 
 - Renamed the package to `path_gen`.

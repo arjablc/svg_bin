@@ -60,6 +60,8 @@ flutter:
   assets:
     # path_gen:assets:start
     - assets/icons-bin/
+    - assets/icons-bin/nested/
+    - assets/icons-bin/w-bin/
     # path_gen:assets:end
     - assets/logo.png
 ''');
