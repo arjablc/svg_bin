@@ -4,7 +4,9 @@ Iterable<String> flutterAssetDirectories(Iterable<String> outputs) sync* {
   for (final output in outputs) {
     final segments = output.split('/');
     final binIndex = segments.indexWhere((segment) => segment.endsWith('-bin'));
-    if (binIndex >= 0) yield '${segments.take(binIndex + 1).join('/')}/';
+    if (binIndex >= 0) {
+      yield '${segments.take(segments.length - 1).join('/')}/';
+    }
   }
 }
 

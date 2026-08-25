@@ -3,7 +3,7 @@ description: "All in one generator for your asset paths with support to transfor
 repository: https://github.com/arjablc/path_gen
 issue_tracker: https://github.com/arjablc/path_gen/issues
 
-version: 1.4.1
+version: 1.4.2
 topics:
   - asset
   - generation
